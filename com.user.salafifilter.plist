@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.salafifilter</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/arc/salafi-filter/update.sh</string>
+    </array>
+
+    <!-- Run every 5 hours (5 * 60 * 60 = 18000 seconds) -->
+    <key>StartInterval</key>
+    <integer>18000</integer>
+
+    <!-- Also run once on load (so you don't have to wait 5h for the first run) -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/arc/salafi-filter/logs/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/arc/salafi-filter/logs/launchd.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/arc/salafi-filter</string>
+</dict>
+</plist>

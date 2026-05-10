@@ -1,0 +1,29 @@
+# Secrets — never commit these
+.env
+telegram-session.session
+telegram-session.session-journal
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Local data — kept in GitHub Actions cache, not in the repo
+profiles.db
+profiles.db-journal
+photos/
+logs/
+
+# Build outputs
+profiles.html
+public/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

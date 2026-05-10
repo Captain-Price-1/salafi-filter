@@ -1,0 +1,75 @@
+name: Scrape and deploy
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'   # every 4 hours, on the hour (UTC)
+  workflow_dispatch:         # also allow manual trigger from the Actions tab
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false  # never cancel a running scrape; queue if a new one starts
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore SQLite database from cache
+        uses: actions/cache@v4
+        with:
+          path: profiles.db
+          key: profiles-db-${{ github.run_id }}
+          restore-keys: |
+            profiles-db-
+
+      - name: Restore Telegram session from cache
+        uses: actions/cache@v4
+        with:
+          path: telegram-session.session
+          key: telegram-session-${{ github.run_id }}
+          restore-keys: |
+            telegram-session-
+
+      - name: Bootstrap session from secret on first run
+        run: |
+          if [ ! -f telegram-session.session ]; then
+            echo "No cached session — bootstrapping from TELEGRAM_SESSION_B64 secret."
+            echo "${{ secrets.TELEGRAM_SESSION_B64 }}" | base64 -d > telegram-session.session
+          else
+            echo "Restored session from cache."
+          fi
+
+      - name: Scrape Telegram and rebuild HTML
+        env:
+          TELEGRAM_API_ID:   ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_PHONE:    ${{ secrets.TELEGRAM_PHONE }}
+          CHANNEL:           ${{ secrets.CHANNEL }}
+        run: |
+          python scrape.py
+          python build_html.py
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: ./public
+          production-branch: main
+          production-deploy: true
+          deploy-message: "scheduled scrape ${{ github.run_id }}"
+          enable-pull-request-comment: false
+          enable-commit-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
