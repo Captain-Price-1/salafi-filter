@@ -225,66 +225,137 @@ aside .filter-actions{
   font:700 10px/1 'Inter',sans-serif;letter-spacing:.1em;
   padding:5px 9px;border-radius:4px;
 }
-.card .top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
-.card .facts{
-  font:500 15px/1.4 'Inter',sans-serif;
-  display:flex;flex-wrap:wrap;align-items:baseline;
+/* Card head — gender badge, age, location */
+.card .head-line{
+  display:flex;flex-wrap:wrap;align-items:center;
+  gap:10px 14px;
 }
-.card .facts .age{
-  font:700 26px/1 'Playfair Display',Georgia,serif;
-  color:var(--accent);margin-right:10px;letter-spacing:-.01em;
+.card .head-line .age{
+  font:700 28px/1 'Playfair Display',Georgia,serif;
+  color:var(--accent);letter-spacing:-.01em;
 }
-.card .facts .sep{
+.card .head-line .loc{
+  font:500 14px/1.3 'Inter',sans-serif;
+  color:var(--ink-soft);
+}
+.card .head-line .sep{
   display:inline-block;width:3px;height:3px;
   background:var(--muted-soft);border-radius:50%;
-  margin:0 10px;align-self:center;
 }
-.card .badge{
-  display:inline-block;
-  background:var(--accent-soft);color:var(--accent);
-  padding:3px 10px;border-radius:999px;
-  font:600 11px/1.4 'Inter',sans-serif;
-  text-transform:uppercase;letter-spacing:.06em;
+.gender-badge{
+  display:inline-flex;align-items:center;
+  padding:5px 13px;border-radius:999px;
+  font:700 11px/1.4 'Inter',sans-serif;
+  text-transform:uppercase;letter-spacing:.09em;
+  border:1px solid transparent;
 }
-.card .details{color:var(--muted);font-size:13px;margin:10px 0 0;line-height:1.7}
-.card .details span{margin-right:18px;display:inline-block}
+.gender-badge.gender-female{background:#FBE9EE;color:#A0466A;border-color:#F0CFD8}
+.gender-badge.gender-male{background:#F1E5D5;color:#7C5234;border-color:#E1CCB1}
+.gender-badge.gender-unknown{background:#F0EBE0;color:#6B5E4A;border-color:#DDD5C2}
+
+/* Posted-date pill */
+.card .posted{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:10px;
+  background:var(--gold-soft);color:#8C6B36;
+  padding:4px 11px;border-radius:6px;
+  font:700 10.5px/1.5 'Inter',sans-serif;
+  letter-spacing:.07em;text-transform:uppercase;
+  width:fit-content;
+}
+
+/* Fact row — height, complexion, profession */
+.card .fact-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.card .fact{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent-pale);color:var(--accent);
+  padding:6px 13px;border-radius:999px;
+  font:500 13px/1.3 'Inter',sans-serif;
+  border:1px solid #DCE9DF;
+}
+.card .fact .fact-icon{font-size:13px;line-height:1;opacity:.85}
+.card .fact .fact-key{color:var(--muted);font-weight:500;margin-right:1px}
+
+/* Looking for callout */
 .card .lookingfor{
-  font-style:italic;color:var(--ink-soft);font-size:14px;line-height:1.55;
-  margin-top:12px;padding:10px 14px;
+  font:italic 400 14px/1.6 'Inter',sans-serif;
+  color:var(--ink-soft);
+  margin-top:14px;padding:12px 16px;
   border-left:3px solid var(--gold);
   background:var(--gold-soft);
   border-radius:0 var(--radius-xs) var(--radius-xs) 0;
 }
-.card details{margin-top:14px;border-top:1px dashed var(--border);padding-top:10px}
-.card details summary{
-  cursor:pointer;color:var(--muted);font-size:12px;
-  user-select:none;font-weight:500;
-  list-style:none;display:inline-flex;align-items:center;gap:5px;
+.card .lookingfor-label{
+  display:block;font-style:normal;font-weight:700;
+  color:#8C6B36;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:4px;
 }
-.card details summary::before{content:"›";font-size:14px;transition:transform var(--t);display:inline-block}
-.card details[open] summary::before{transform:rotate(90deg)}
-.card details summary::-webkit-details-marker{display:none}
-.card details summary:hover{color:var(--accent)}
-.card details pre{
+
+/* Complete details — toggle */
+.card details.complete{margin-top:16px;border-top:1px solid var(--border-soft);padding-top:14px}
+.card details.complete summary{
+  cursor:pointer;list-style:none;
+  display:inline-flex;align-items:center;gap:6px;
+  font:600 13px/1 'Inter',sans-serif;
+  color:var(--accent);user-select:none;
+  padding:6px 0;
+}
+.card details.complete summary::-webkit-details-marker{display:none}
+.card details.complete summary .caret{
+  display:inline-block;font-size:15px;transition:transform var(--t);line-height:1;
+}
+.card details.complete[open] summary .caret{transform:rotate(90deg)}
+.card details.complete summary:hover{color:var(--accent-hover)}
+
+.complete-body{
+  margin-top:14px;background:var(--panel-soft);
+  border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:18px 20px;
+}
+.cdetail-section{margin-bottom:18px}
+.cdetail-section:last-child{margin-bottom:0}
+.cdetail-label{
+  font:700 10.5px/1 'Inter',sans-serif;
+  color:var(--accent);
+  text-transform:uppercase;letter-spacing:.12em;
+  padding-bottom:7px;border-bottom:1px solid var(--border);
+  margin-bottom:11px;
+}
+.cdetail-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:12px 24px;
+}
+.cdetail-item{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cdetail-key{
+  font:600 10.5px/1.4 'Inter',sans-serif;
+  color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.cdetail-val{
+  font:400 14px/1.45 'Inter',sans-serif;
+  color:var(--ink);
+  word-break:break-word;
+}
+.cdetail-fallback{
   white-space:pre-wrap;word-wrap:break-word;
-  font:13px/1.65 -apple-system,BlinkMacSystemFont,sans-serif;
-  color:var(--ink-soft);
-  background:var(--panel-soft);
-  padding:14px 16px;border-radius:var(--radius-xs);
-  margin-top:10px;border:1px solid var(--border-soft);
+  font:13px/1.65 'Inter',sans-serif;
+  color:var(--ink-soft);margin:0;
 }
+@media (max-width: 600px){
+  .cdetail-grid{grid-template-columns:1fr;gap:12px}
+  .complete-body{padding:14px}
+}
+
+/* Foot — Open in Telegram only */
 .card .foot{
-  margin-top:14px;font-size:12px;color:var(--muted);
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  margin-top:14px;font-size:13px;
 }
-.card .foot a{color:var(--accent);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.card .foot a{
+  color:var(--accent);text-decoration:none;font-weight:600;
+  display:inline-flex;align-items:center;gap:5px;
+}
 .card .foot a:hover{text-decoration:underline}
-.chip{
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--gold-soft);color:#8C6B36;
-  padding:4px 9px;border-radius:6px;
-  font:600 11px/1.3 'Inter',sans-serif;
-}
 
 /* ---------- Pagination & empty ---------- */
 .pagination{
@@ -724,34 +795,117 @@ function updateFilterBadge(){
 
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// ---------- Raw-text parser for "Complete details" view ----------
+const SKIP_LINE_RX = /^(profile\s*code|bride\s*details|groom\s*details|disclose\s*later|disclaimer|note|profile|---+|===+)/i;
+const KV_RX = /^([A-Za-z][A-Za-z\s/(),.&'\-]{1,45})\s*[:\-]\s*(.+)$/;
+
+function parseRawProfile(raw){
+  if (!raw) return [];
+  const cleaned = raw.replace(/\*+/g,'').replace(/__+/g,'').replace(/🏆|🌹|💍|🌸|✨|🎯|📌|👑|💫/g,'');
+  const lines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const seen = new Map();
+  for (const line of lines){
+    if (SKIP_LINE_RX.test(line)) continue;
+    const m = line.match(KV_RX);
+    if (!m) continue;
+    const label = m[1].trim().replace(/\s+/g,' ');
+    const value = m[2].trim().replace(/^["'\s]+|["'\s]+$/g,'');
+    if (!value || value.length > 600) continue;
+    const key = label.toLowerCase();
+    if (!seen.has(key)) seen.set(key, [label, value]);
+  }
+  return [...seen.values()];
+}
+
+const DETAIL_SECTIONS = [
+  { name: 'Personal',    rx: /^(full\s*name|name|nick\s*name|gender|age|date\s*of\s*birth|year\s*of\s*birth|dob|marital\s*status|children|kids|languages?|nationality|citizenship)/i },
+  { name: 'Physical',    rx: /^(height|complexion|weight|build|skin|body)/i },
+  { name: 'Background',  rx: /^(education|qualification|profession|occupation|work|income|salary|business|company|job)/i },
+  { name: 'Family',      rx: /^(father|mother|siblings|family|brother|sister|guardian|parents?)/i },
+  { name: 'Location',    rx: /^(location|city|state|country|residence|origin|hometown|address|preference\s*location)/i },
+  { name: 'Practice',    rx: /^(sect|madhab|manhaj|salah|prayer|hijab|niqab|beard|deen|practice|fasts?|recite|memorize|qira|aqeedah|quran|hadith|seek|study|teach)/i },
+  { name: 'Looking For', rx: /^(looking\s*for|partner\s*preference|expectations|preference|requirements?|spouse|wife|husband|criteria|partner)/i },
+];
+
+function groupDetails(pairs){
+  const sections = DETAIL_SECTIONS.map(s => ({ name: s.name, rx: s.rx, items: [] }));
+  const other = { name: 'Other', items: [] };
+  for (const [label, value] of pairs){
+    let placed = false;
+    for (const sec of sections){
+      if (sec.rx.test(label)){ sec.items.push([label, value]); placed = true; break; }
+    }
+    if (!placed) other.items.push([label, value]);
+  }
+  const result = sections.filter(s => s.items.length);
+  if (other.items.length) result.push(other);
+  return result;
+}
+
+function renderCompleteDetails(p){
+  const pairs = parseRawProfile(p.raw_text);
+  if (!pairs.length){
+    return `<pre class="cdetail-fallback">${escapeHtml(p.raw_text || 'No details available.')}</pre>`;
+  }
+  const sections = groupDetails(pairs);
+  return sections.map(s => `
+    <div class="cdetail-section">
+      <div class="cdetail-label">${escapeHtml(s.name)}</div>
+      <div class="cdetail-grid">
+        ${s.items.map(([k,v]) => `
+          <div class="cdetail-item">
+            <span class="cdetail-key">${escapeHtml(k)}</span>
+            <span class="cdetail-val">${escapeHtml(v)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---------- Card ----------
 function renderCard(p, opts){
   opts = opts || {};
-  const facts = [];
-  if (p.age != null) facts.push(`<span class="age">${p.age}</span>`);
-  if (p.gender)      facts.push(`<span class="badge">${p.gender}</span>`);
-  if (p.marital_status) facts.push(escapeHtml(p.marital_status));
+
+  // Headline: gender, age, location
+  const genderClass = p.gender || 'unknown';
+  const genderLabel = p.gender ? p.gender : 'unknown';
+  const genderBadge = `<span class="gender-badge gender-${genderClass}">${escapeHtml(genderLabel)}</span>`;
+
+  const ageEl = p.age != null ? `<span class="age">${p.age}</span>` : '';
   const loc = [p.city, p.state, p.country].filter(Boolean).map(escapeHtml).join(', ');
-  if (loc) facts.push(loc);
+  const locEl = loc ? `<span class="loc">${loc}</span>` : '';
 
-  const details = [];
-  if (p.education)  details.push(`<span>🎓 ${escapeHtml(p.education)}</span>`);
-  if (p.profession) details.push(`<span>💼 ${escapeHtml(p.profession)}</span>`);
-  if (p.height)     details.push(`<span>📏 ${escapeHtml(p.height)}</span>`);
-  if (p.children)   details.push(`<span>👶 ${escapeHtml(p.children)}</span>`);
-
+  // Posted date
   const posted = p.posted_at ? p.posted_at.slice(0,10) : '';
+  const postedEl = posted ? `<div class="posted">Posted · ${posted}</div>` : '';
+
+  // Pull complexion (and a few other quick facts) from raw text
+  const pairs = parseRawProfile(p.raw_text);
+  const lookup = {};
+  for (const [k,v] of pairs) lookup[k.toLowerCase()] = v;
+  const complexion = lookup['complexion'] || lookup['skin'] || '';
+
+  const facts = [];
+  if (p.height)     facts.push(`<span class="fact"><span class="fact-icon">📏</span><span class="fact-key">Height</span> ${escapeHtml(p.height)}</span>`);
+  if (complexion)   facts.push(`<span class="fact"><span class="fact-icon">✨</span><span class="fact-key">Complexion</span> ${escapeHtml(complexion)}</span>`);
+  if (p.profession) facts.push(`<span class="fact"><span class="fact-icon">💼</span><span class="fact-key">Profession</span> ${escapeHtml(p.profession)}</span>`);
+
+  const lookingFor = p.looking_for
+    ? `<div class="lookingfor"><span class="lookingfor-label">Looking for</span>${escapeHtml(p.looking_for)}</div>`
+    : '';
 
   return `<div class="card${opts.isNew?' new':''}">
-    <div class="top">
-      <div class="facts">${facts.join('<span class="sep"></span>')}</div>
-      ${p.has_photo ? '<span class="chip">📷 photo</span>' : ''}
-    </div>
-    ${details.length?`<div class="details">${details.join(' ')}</div>`:''}
-    ${p.looking_for?`<div class="lookingfor">Looking for: ${escapeHtml(p.looking_for)}</div>`:''}
-    <details><summary>Show full profile text</summary><pre>${escapeHtml(p.raw_text||'')}</pre></details>
+    <div class="head-line">${genderBadge}${ageEl}${locEl}</div>
+    ${postedEl}
+    ${facts.length?`<div class="fact-row">${facts.join('')}</div>`:''}
+    ${lookingFor}
+    <details class="complete">
+      <summary><span class="caret">›</span>Complete details</summary>
+      <div class="complete-body">${renderCompleteDetails(p)}</div>
+    </details>
     <div class="foot">
       <a href="${p.telegram_url}" target="_blank" rel="noopener">Open in Telegram ↗</a>
-      ${posted?`<span>posted ${posted}</span>`:''}
     </div>
   </div>`;
 }
