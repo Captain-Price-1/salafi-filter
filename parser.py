@@ -98,14 +98,31 @@ def extract_age(text: str) -> Optional[int]:
 
 def extract_gender(text: str) -> Optional[str]:
     """Return 'male' / 'female' for the person being described in the post."""
-    t = text.lower()
-    # Strong signals: a profile usually opens with "Brother" or "Sister"
-    # or contains "looking for a sister/brother" (which inverts the subject).
-    first_500 = t[:500]
+    # Strongest signal: an explicit "Gender: ..." field. Handles many variants:
+    #   "Gender: Male" / "Gender: Female"
+    #   "Gender: M" / "Gender: F"  (single-letter answers)
+    #   "Gender: M/F : Female"     (template form where the user fills in after second colon)
+    field_match = re.search(r"\bgender\b[^\n]*", text, re.IGNORECASE)
+    if field_match:
+        line = field_match.group(0)
+        # If the line has a colon (the "Gender:" separator and possibly a second one
+        # from "M/F : Female"-style templates), prefer what comes after the LAST colon.
+        last_colon = line.rfind(":")
+        after = line[last_colon + 1:] if last_colon != -1 and last_colon < len(line) - 1 else line
+        words = re.findall(r"\b([Mm]ale|[Ff]emale|[Mm]|[Ff])\b", after)
+        if not words and after != line:
+            words = re.findall(r"\b([Mm]ale|[Ff]emale|[Mm]|[Ff])\b", line)
+        if words:
+            first = words[0].lower()
+            if first in ("m", "male"):
+                return "male"
+            if first in ("f", "female"):
+                return "female"
 
-    # Self-description tokens (strongest)
+    # Heuristic fallback: brother/sister keywords in the first 500 chars
+    t = text.lower()
+    first_500 = t[:500]
     if re.search(r"\b(brother|bhai|male|groom)\b", first_500):
-        # But "looking for a brother" means the poster is female.
         if re.search(r"looking\s+for\s+(a\s+)?(brother|bhai|male|groom|husband)", first_500):
             return "female"
         return "male"

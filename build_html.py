@@ -13,21 +13,40 @@ OUT  = ROOT / "profiles.html"
 conn = sqlite3.connect(DB)
 conn.row_factory = sqlite3.Row
 rows = [dict(r) for r in conn.execute(
-    "SELECT msg_id, posted_at, raw_text, gender, age, marital_status, children, "
+    "SELECT channel, msg_id, posted_at, raw_text, gender, age, marital_status, children, "
     "city, state, country, education, profession, height, looking_for, "
-    "has_photo, telegram_url FROM profiles WHERE is_profile=1 ORDER BY msg_id DESC"
+    "has_photo, telegram_url FROM profiles WHERE is_profile=1 ORDER BY channel, msg_id DESC"
 )]
+channel_counts = dict(conn.execute(
+    "SELECT channel, COUNT(*) FROM profiles WHERE is_profile=1 GROUP BY channel"
+).fetchall())
 conn.close()
 
 for r in rows:
     if r["raw_text"]:
         r["raw_text"] = r["raw_text"].strip()
 
+# Channel display labels — order here determines UI order.
+CHANNEL_LABELS = [
+    ("salafimarriage1",  "Salafi Marriage"),
+    ("salafizawj_nikah", "Zawaj Nikah"),
+]
+# Drop any channel from the UI list that has no profiles in this build.
+channels_for_ui = [(cid, label) for cid, label in CHANNEL_LABELS if channel_counts.get(cid, 0) > 0]
+# If the DB has channels we don't know about, append them with a fallback label.
+known_ids = {cid for cid, _ in CHANNEL_LABELS}
+for cid in channel_counts:
+    if cid not in known_ids:
+        channels_for_ui.append((cid, "@" + cid))
+channels_json = json.dumps(channels_for_ui, ensure_ascii=False)
+
 data_json     = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
 generated_at  = datetime.now().strftime("%Y-%m-%d %H:%M")
 profile_count = len(rows)
 
 print(f"Embedding {profile_count} profiles, ~{len(data_json)//1024} KB of data")
+for cid, n in channel_counts.items():
+    print(f"  @{cid}: {n}")
 
 HTML = r"""<!doctype html>
 <html lang="en">
@@ -103,6 +122,38 @@ header .meta{
 }
 header .meta strong{color:var(--ink);font-weight:600}
 header .meta .dot{width:3px;height:3px;background:var(--muted-soft);border-radius:50%;align-self:center}
+header .meta .ch-source{color:var(--accent);font-weight:500}
+
+/* ---------- Channel switcher ---------- */
+.channel-switch{
+  display:inline-flex;background:var(--bg);
+  border:1px solid var(--border);border-radius:999px;
+  padding:4px;margin-top:14px;gap:2px;
+  box-shadow:var(--shadow-sm);
+}
+.channel-switch button{
+  background:none;border:none;cursor:pointer;
+  padding:8px 16px;border-radius:999px;
+  font:600 12.5px/1 'Inter',sans-serif;
+  color:var(--muted);letter-spacing:.01em;
+  transition:all var(--t);
+  display:inline-flex;align-items:center;gap:7px;
+}
+.channel-switch button:hover{color:var(--ink)}
+.channel-switch button.active{
+  background:var(--accent);color:#fff;
+  box-shadow:0 1px 3px rgba(15,76,58,.18);
+}
+.channel-switch .ch-count{
+  display:inline-block;
+  background:rgba(255,255,255,.18);
+  color:inherit;opacity:.85;
+  padding:1px 7px;border-radius:999px;
+  font-size:10.5px;font-weight:700;line-height:1.4;
+}
+.channel-switch button:not(.active) .ch-count{
+  background:var(--accent-soft);color:var(--accent);opacity:1;
+}
 
 /* ---------- Tabs ---------- */
 nav.tabs{display:flex;gap:2px;margin-top:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -501,15 +552,10 @@ aside .filter-actions{
   <div class="titlebar">
     <div>
       <h1><span class="crest">☪</span> Salafi Marriage</h1>
-      <div class="meta">
-        <span><strong>__PROFILE_COUNT__</strong> profiles</span>
-        <span class="dot"></span>
-        <span>updated __GENERATED_AT__</span>
-        <span class="dot"></span>
-        <span>from <a href="https://t.me/salafimarriage1" target="_blank" rel="noopener">@salafimarriage1</a></span>
-      </div>
+      <div class="meta" id="headerMeta"></div>
     </div>
   </div>
+  <div class="channel-switch" id="channelSwitch"></div>
   <nav class="tabs">
     <button class="tab active" data-tab="browse">Browse</button>
     <button class="tab" data-tab="prefs">My Preferences</button>
@@ -671,19 +717,79 @@ aside .filter-actions{
 
 <script>
 const DATA = __DATA__;
+const CHANNELS = __CHANNELS__;
+const GENERATED_AT = '__GENERATED_AT__';
 const PER_PAGE = 25;
 let page = 1;
 
-// ============ STATE PERSISTENCE ============
-const PREFS_KEY = 'salafi_prefs_v1';
-const SEEN_KEY  = 'salafi_last_seen_msgid_v1';
-
-function loadPrefs(){
-  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(e){ return {}; }
+// ============ ACTIVE CHANNEL ============
+const ACTIVE_CHANNEL_KEY = 'salafi_active_channel_v1';
+let activeChannel = (() => {
+  const stored = localStorage.getItem(ACTIVE_CHANNEL_KEY);
+  if (stored && CHANNELS.some(c => c[0] === stored)) return stored;
+  return CHANNELS.length ? CHANNELS[0][0] : '';
+})();
+function channelLabel(id){
+  const c = CHANNELS.find(x => x[0] === id);
+  return c ? c[1] : '@' + id;
 }
-function storePrefs(p){ localStorage.setItem(PREFS_KEY, JSON.stringify(p)); }
-function loadSeenId(){ return parseInt(localStorage.getItem(SEEN_KEY)) || 0; }
-function storeSeenId(n){ localStorage.setItem(SEEN_KEY, String(n)); }
+function activeData(){ return DATA.filter(d => d.channel === activeChannel); }
+function activeCount(){ return activeData().length; }
+
+// ============ STATE PERSISTENCE (per channel) ============
+function prefsKey(){ return `salafi_prefs_${activeChannel}_v1`; }
+function seenKey(){ return `salafi_last_seen_msgid_${activeChannel}_v1`; }
+function loadPrefs(){
+  try { return JSON.parse(localStorage.getItem(prefsKey())) || {}; } catch(e){ return {}; }
+}
+function storePrefs(p){ localStorage.setItem(prefsKey(), JSON.stringify(p)); }
+function loadSeenId(){ return parseInt(localStorage.getItem(seenKey())) || 0; }
+function storeSeenId(n){ localStorage.setItem(seenKey(), String(n)); }
+
+// ============ HEADER + CHANNEL SWITCHER ============
+function renderHeaderMeta(){
+  const meta = document.getElementById('headerMeta');
+  if (!meta) return;
+  const ch = activeChannel;
+  meta.innerHTML = `
+    <span><strong>${activeCount().toLocaleString()}</strong> profiles</span>
+    <span class="dot"></span>
+    <span>updated ${escapeHtml(GENERATED_AT)}</span>
+    <span class="dot"></span>
+    <span>from <a class="ch-source" href="https://t.me/${encodeURIComponent(ch)}" target="_blank" rel="noopener">@${escapeHtml(ch)}</a></span>
+  `;
+}
+function renderChannelSwitch(){
+  const host = document.getElementById('channelSwitch');
+  if (!host) return;
+  if (CHANNELS.length < 2){ host.style.display = 'none'; return; }
+  host.innerHTML = CHANNELS.map(([id, label]) => {
+    const count = DATA.filter(d => d.channel === id).length;
+    const isActive = id === activeChannel ? ' active' : '';
+    return `<button class="${isActive ? 'active' : ''}" data-channel="${escapeHtml(id)}">
+      ${escapeHtml(label)}<span class="ch-count">${count.toLocaleString()}</span>
+    </button>`;
+  }).join('');
+  host.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => switchChannel(btn.dataset.channel));
+  });
+}
+function switchChannel(id){
+  if (!CHANNELS.some(c => c[0] === id)) return;
+  if (id === activeChannel) return;
+  activeChannel = id;
+  localStorage.setItem(ACTIVE_CHANNEL_KEY, id);
+  // Refresh dropdowns and views
+  page = 1;
+  rebuildDynamicLists();
+  resetFilters();        // clears any filter inputs from previous channel
+  renderHeaderMeta();
+  renderChannelSwitch(); // updates active state
+  hydratePrefsForm();
+  refreshPrefsBanner();
+  updateNotifBadge();
+  if (document.getElementById('notif-section').classList.contains('active')) renderNotifications();
+}
 
 // ============ TABS ============
 document.querySelectorAll('.tab').forEach(b => {
@@ -718,18 +824,15 @@ drawerClose?.addEventListener('click', closeDrawer);
 drawerBackdrop?.addEventListener('click', closeDrawer);
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeDrawer(); });
 
-// ============ DROPDOWNS ============
+// ============ DYNAMIC DROPDOWNS (rebuilt when channel changes) ============
 function uniq(arr){ return [...new Set(arr.filter(Boolean))]; }
-const countries = uniq(DATA.map(p=>p.country)).sort();
-const statuses  = uniq(DATA.map(p=>p.marital_status)).sort();
 
-function fillCountrySelect(sel){
+function fillCountrySelect(sel, countries){
+  sel.innerHTML = '';
   countries.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
 }
-fillCountrySelect(document.getElementById('country'));
-fillCountrySelect(document.getElementById('p_country'));
-
-function fillMaritalBox(box, idPrefix){
+function fillMaritalBox(box, idPrefix, statuses){
+  box.innerHTML = '';
   statuses.forEach(s => {
     const lab = document.createElement('label');
     lab.className = 'checkrow';
@@ -737,8 +840,18 @@ function fillMaritalBox(box, idPrefix){
     box.appendChild(lab);
   });
 }
-fillMaritalBox(document.getElementById('maritalBox'),    'marital');
-fillMaritalBox(document.getElementById('p_maritalBox'),  'pmarital');
+function rebuildDynamicLists(){
+  const data = activeData();
+  const countries = uniq(data.map(p=>p.country)).sort();
+  const statuses  = uniq(data.map(p=>p.marital_status)).sort();
+  fillCountrySelect(document.getElementById('country'),   countries);
+  fillCountrySelect(document.getElementById('p_country'), countries);
+  fillMaritalBox(document.getElementById('maritalBox'),   'marital',  statuses);
+  fillMaritalBox(document.getElementById('p_maritalBox'), 'pmarital', statuses);
+  // Wire up the marital checkboxes (they're recreated each rebuild)
+  document.querySelectorAll('[data-marital]').forEach(c =>
+    c.addEventListener('change', () => { page=1; renderBrowse(); }));
+}
 
 // ============ COMMON FILTER ============
 function matches(p, c){
@@ -923,7 +1036,7 @@ function renderCard(p, opts){
 
 function renderBrowse(){
   const c = browseFilters();
-  const filtered = DATA.filter(p => matches(p, c));
+  const filtered = activeData().filter(p => matches(p, c));
   const total = filtered.length;
   document.getElementById('count').innerHTML = `<strong>${total.toLocaleString()}</strong> matching profiles`;
 
@@ -1002,7 +1115,7 @@ function refreshPrefsBanner(){
     banner.innerHTML = '<div class="banner warn">No preferences saved yet. Fill in the form below and hit <strong>Save preferences</strong>.</div>';
     return;
   }
-  const matchCount = DATA.filter(d => matches(d, p)).length;
+  const matchCount = activeData().filter(d => matches(d, p)).length;
   banner.innerHTML = `<div class="banner ok"><strong>${matchCount.toLocaleString()}</strong> profiles in the current data match your saved preferences.</div>`;
 }
 
@@ -1059,7 +1172,7 @@ function getNewMatching(){
   const p = loadPrefs();
   if (!Object.keys(p).length) return {prefs:null, list:[]};
   const seen = loadSeenId();
-  const list = DATA.filter(d => d.msg_id > seen && matches(d, p));
+  const list = activeData().filter(d => d.msg_id > seen && matches(d, p));
   return {prefs:p, list};
 }
 
@@ -1090,7 +1203,7 @@ function renderNotifications(){
 }
 
 function markAllRead(){
-  const maxId = DATA.reduce((m,d) => Math.max(m, d.msg_id), 0);
+  const maxId = activeData().reduce((m,d) => Math.max(m, d.msg_id), 0);
   storeSeenId(maxId);
   updateNotifBadge();
   renderNotifications();
@@ -1100,9 +1213,11 @@ function markAllRead(){
 ['q','gender','ageMin','ageMax','city','profession','education','hasPhoto']
   .forEach(id => document.getElementById(id).addEventListener('input', () => { page=1; renderBrowse(); }));
 document.getElementById('country').addEventListener('change', () => { page=1; renderBrowse(); });
-document.querySelectorAll('[data-marital]').forEach(c => c.addEventListener('change', () => { page=1; renderBrowse(); }));
 
 // First-render
+renderHeaderMeta();
+renderChannelSwitch();
+rebuildDynamicLists();
 renderBrowse();
 hydratePrefsForm();
 updateNotifBadge();
@@ -1112,6 +1227,7 @@ updateNotifBadge();
 
 html = (HTML
         .replace("__DATA__", data_json)
+        .replace("__CHANNELS__", channels_json)
         .replace("__GENERATED_AT__", generated_at)
         .replace("__PROFILE_COUNT__", f"{profile_count:,}"))
 

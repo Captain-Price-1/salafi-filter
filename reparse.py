@@ -11,14 +11,14 @@ DB = Path(__file__).parent / "profiles.db"
 
 def main():
     conn = sqlite3.connect(DB)
-    rows = conn.execute("SELECT msg_id, raw_text, is_profile FROM profiles").fetchall()
+    rows = conn.execute("SELECT channel, msg_id, raw_text, is_profile FROM profiles").fetchall()
     print(f"Re-parsing {len(rows)} rows...")
 
     flipped_to_profile = 0
     flipped_to_nonprofile = 0
     updated = 0
 
-    for msg_id, raw_text, old_is_profile in rows:
+    for channel, msg_id, raw_text, old_is_profile in rows:
         text = raw_text or ""
         parsed = profile_parser.parse_profile(text)
         new_is_profile = 1 if profile_parser.is_profile_post(text) else 0
@@ -28,14 +28,14 @@ def main():
                 gender=?, age=?, marital_status=?, children=?,
                 city=?, state=?, country=?, education=?, profession=?,
                 height=?, looking_for=?, is_profile=?
-               WHERE msg_id=?""",
+               WHERE channel=? AND msg_id=?""",
             (
                 parsed.get("gender"), parsed.get("age"),
                 parsed.get("marital_status"), parsed.get("children"),
                 parsed.get("city"), parsed.get("state"), parsed.get("country"),
                 parsed.get("education"), parsed.get("profession"),
                 parsed.get("height"), parsed.get("looking_for"),
-                new_is_profile, msg_id,
+                new_is_profile, channel, msg_id,
             ),
         )
         updated += 1
