@@ -225,27 +225,31 @@ aside .filter-actions{
   font:700 10px/1 'Inter',sans-serif;letter-spacing:.1em;
   padding:5px 9px;border-radius:4px;
 }
-/* Card head — gender badge, age, location */
+/* Card header row — profile code (left) + posted date (right) */
+.card .card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px 12px;margin-bottom:12px;
+}
+.profile-code{
+  display:inline-flex;align-items:baseline;gap:6px;
+  font:500 11.5px/1.4 'Inter',sans-serif;
+  color:var(--muted);letter-spacing:.04em;
+}
+.profile-code .pc-label{text-transform:uppercase;font-weight:600;letter-spacing:.1em}
+.profile-code .pc-num{
+  font:700 16px/1 'Playfair Display',Georgia,serif;
+  color:var(--accent);letter-spacing:.01em;
+}
+
+/* Headline chip row — gender, age, location */
 .card .head-line{
   display:flex;flex-wrap:wrap;align-items:center;
-  gap:10px 14px;
-}
-.card .head-line .age{
-  font:700 28px/1 'Playfair Display',Georgia,serif;
-  color:var(--accent);letter-spacing:-.01em;
-}
-.card .head-line .loc{
-  font:500 14px/1.3 'Inter',sans-serif;
-  color:var(--ink-soft);
-}
-.card .head-line .sep{
-  display:inline-block;width:3px;height:3px;
-  background:var(--muted-soft);border-radius:50%;
+  gap:8px 10px;
 }
 .gender-badge{
   display:inline-flex;align-items:center;
   padding:5px 13px;border-radius:999px;
-  font:700 11px/1.4 'Inter',sans-serif;
+  font:700 11px/1.5 'Inter',sans-serif;
   text-transform:uppercase;letter-spacing:.09em;
   border:1px solid transparent;
 }
@@ -253,10 +257,25 @@ aside .filter-actions{
 .gender-badge.gender-male{background:#F1E5D5;color:#7C5234;border-color:#E1CCB1}
 .gender-badge.gender-unknown{background:#F0EBE0;color:#6B5E4A;border-color:#DDD5C2}
 
+.age-badge{
+  display:inline-flex;align-items:center;
+  padding:5px 14px;border-radius:999px;
+  font:700 13px/1.5 'Inter',sans-serif;
+  background:var(--accent-soft);color:var(--accent);
+  border:1px solid #C4DECC;
+}
+.loc-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 13px;border-radius:999px;
+  font:600 12px/1.5 'Inter',sans-serif;
+  background:#E6EAF1;color:#3F4F6A;
+  border:1px solid #C9D2DD;
+}
+.loc-badge::before{content:"📍";font-size:11px;line-height:1}
+
 /* Posted-date pill */
 .card .posted{
   display:inline-flex;align-items:center;gap:5px;
-  margin-top:10px;
   background:var(--gold-soft);color:#8C6B36;
   padding:4px 11px;border-radius:6px;
   font:700 10.5px/1.5 'Inter',sans-serif;
@@ -312,39 +331,28 @@ aside .filter-actions{
   border:1px solid var(--border-soft);border-radius:var(--radius-sm);
   padding:18px 20px;
 }
-.cdetail-section{margin-bottom:18px}
-.cdetail-section:last-child{margin-bottom:0}
-.cdetail-label{
-  font:700 10.5px/1 'Inter',sans-serif;
-  color:var(--accent);
+.raw-message{
+  display:flex;flex-direction:column;gap:5px;
+  font:14px/1.6 'Inter',sans-serif;color:var(--ink-soft);
+}
+.raw-message .raw-header{
+  font:700 11px/1.4 'Inter',sans-serif;
   text-transform:uppercase;letter-spacing:.12em;
-  padding-bottom:7px;border-bottom:1px solid var(--border);
-  margin-bottom:11px;
+  color:var(--accent);padding:6px 0 7px;
+  border-bottom:1px solid var(--border);
+  margin:10px 0 6px;
 }
-.cdetail-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-  gap:12px 24px;
+.raw-message .raw-header:first-child{margin-top:0}
+.raw-message .raw-line{display:flex;flex-wrap:wrap;gap:4px 8px;padding:1px 0}
+.raw-message .raw-line .raw-key{
+  font-weight:600;color:var(--ink);flex-shrink:0;
 }
-.cdetail-item{display:flex;flex-direction:column;gap:2px;min-width:0}
-.cdetail-key{
-  font:600 10.5px/1.4 'Inter',sans-serif;
-  color:var(--muted);
-  text-transform:uppercase;letter-spacing:.06em;
-}
-.cdetail-val{
-  font:400 14px/1.45 'Inter',sans-serif;
-  color:var(--ink);
-  word-break:break-word;
-}
-.cdetail-fallback{
-  white-space:pre-wrap;word-wrap:break-word;
-  font:13px/1.65 'Inter',sans-serif;
-  color:var(--ink-soft);margin:0;
-}
+.raw-message .raw-line .raw-key::after{content:":";opacity:.55;margin-left:1px}
+.raw-message .raw-line .raw-val{color:var(--ink-soft);word-break:break-word;flex:1;min-width:140px}
+.raw-message .raw-text{color:var(--ink-soft)}
+.raw-message .raw-blank{height:6px}
 @media (max-width: 600px){
-  .cdetail-grid{grid-template-columns:1fr;gap:12px}
-  .complete-body{padding:14px}
+  .complete-body{padding:14px 16px}
 }
 
 /* Foot — Open in Telegram only */
@@ -795,13 +803,13 @@ function updateFilterBadge(){
 
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// ---------- Raw-text parser for "Complete details" view ----------
-const SKIP_LINE_RX = /^(profile\s*code|bride\s*details|groom\s*details|disclose\s*later|disclaimer|note|profile|---+|===+)/i;
+// ---------- Lightweight key-value parser (used for chip-row complexion lookup) ----------
+const SKIP_LINE_RX = /^(profile\s*code|bride\s*details|groom\s*details|disclose\s*later|disclaimer|note|---+|===+)/i;
 const KV_RX = /^([A-Za-z][A-Za-z\s/(),.&'\-]{1,45})\s*[:\-]\s*(.+)$/;
 
 function parseRawProfile(raw){
   if (!raw) return [];
-  const cleaned = raw.replace(/\*+/g,'').replace(/__+/g,'').replace(/🏆|🌹|💍|🌸|✨|🎯|📌|👑|💫/g,'');
+  const cleaned = raw.replace(/\*+/g,'').replace(/__+/g,'');
   const lines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const seen = new Map();
   for (const line of lines){
@@ -817,70 +825,73 @@ function parseRawProfile(raw){
   return [...seen.values()];
 }
 
-const DETAIL_SECTIONS = [
-  { name: 'Personal',    rx: /^(full\s*name|name|nick\s*name|gender|age|date\s*of\s*birth|year\s*of\s*birth|dob|marital\s*status|children|kids|languages?|nationality|citizenship)/i },
-  { name: 'Physical',    rx: /^(height|complexion|weight|build|skin|body)/i },
-  { name: 'Background',  rx: /^(education|qualification|profession|occupation|work|income|salary|business|company|job)/i },
-  { name: 'Family',      rx: /^(father|mother|siblings|family|brother|sister|guardian|parents?)/i },
-  { name: 'Location',    rx: /^(location|city|state|country|residence|origin|hometown|address|preference\s*location)/i },
-  { name: 'Practice',    rx: /^(sect|madhab|manhaj|salah|prayer|hijab|niqab|beard|deen|practice|fasts?|recite|memorize|qira|aqeedah|quran|hadith|seek|study|teach)/i },
-  { name: 'Looking For', rx: /^(looking\s*for|partner\s*preference|expectations|preference|requirements?|spouse|wife|husband|criteria|partner)/i },
-];
-
-function groupDetails(pairs){
-  const sections = DETAIL_SECTIONS.map(s => ({ name: s.name, rx: s.rx, items: [] }));
-  const other = { name: 'Other', items: [] };
-  for (const [label, value] of pairs){
-    let placed = false;
-    for (const sec of sections){
-      if (sec.rx.test(label)){ sec.items.push([label, value]); placed = true; break; }
-    }
-    if (!placed) other.items.push([label, value]);
-  }
-  const result = sections.filter(s => s.items.length);
-  if (other.items.length) result.push(other);
-  return result;
+// ---------- Profile code extractor ----------
+function extractProfileCode(raw){
+  if (!raw) return null;
+  const m = raw.match(/profile\s*code\b[\s:#\-]{0,5}([A-Za-z]?\d{3,5}[A-Za-z]?)/i);
+  return m ? m[1].toUpperCase() : null;
 }
 
-function renderCompleteDetails(p){
-  const pairs = parseRawProfile(p.raw_text);
-  if (!pairs.length){
-    return `<pre class="cdetail-fallback">${escapeHtml(p.raw_text || 'No details available.')}</pre>`;
+// ---------- Minimal "Complete details" formatter — preserves ALL original lines ----------
+const RAW_HEADER_RX = /^(profile\s*code\b.*|bride\s*details|groom\s*details)$/i;
+const RAW_KV_RX = /^([A-Za-z][A-Za-z0-9\s/()&,.'\-]{0,55}?)\s*:\s*(.*)$/;
+
+function formatRawProfile(raw){
+  if (!raw) return '<div class="raw-message"><div class="raw-text">No details available.</div></div>';
+  const cleaned = raw.replace(/\*+/g,'').replace(/__+/g,'');
+  const lines = cleaned.split(/\r?\n/);
+  const out = [];
+  for (const original of lines){
+    const trimmed = original.trim();
+    if (!trimmed){
+      // Collapse multiple consecutive blanks into a single small spacer
+      if (out.length && !out[out.length-1].includes('class="raw-blank"')){
+        out.push('<div class="raw-blank"></div>');
+      }
+      continue;
+    }
+    if (RAW_HEADER_RX.test(trimmed)){
+      out.push(`<div class="raw-header">${escapeHtml(trimmed)}</div>`);
+      continue;
+    }
+    const kv = trimmed.match(RAW_KV_RX);
+    if (kv && kv[2] !== undefined && kv[2].length > 0){
+      const label = kv[1].trim();
+      const value = kv[2].trim();
+      out.push(`<div class="raw-line"><span class="raw-key">${escapeHtml(label)}</span><span class="raw-val">${escapeHtml(value)}</span></div>`);
+      continue;
+    }
+    out.push(`<div class="raw-text">${escapeHtml(trimmed)}</div>`);
   }
-  const sections = groupDetails(pairs);
-  return sections.map(s => `
-    <div class="cdetail-section">
-      <div class="cdetail-label">${escapeHtml(s.name)}</div>
-      <div class="cdetail-grid">
-        ${s.items.map(([k,v]) => `
-          <div class="cdetail-item">
-            <span class="cdetail-key">${escapeHtml(k)}</span>
-            <span class="cdetail-val">${escapeHtml(v)}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
+  return `<div class="raw-message">${out.join('')}</div>`;
 }
 
 // ---------- Card ----------
 function renderCard(p, opts){
   opts = opts || {};
 
-  // Headline: gender, age, location
-  const genderClass = p.gender || 'unknown';
-  const genderLabel = p.gender ? p.gender : 'unknown';
-  const genderBadge = `<span class="gender-badge gender-${genderClass}">${escapeHtml(genderLabel)}</span>`;
-
-  const ageEl = p.age != null ? `<span class="age">${p.age}</span>` : '';
-  const loc = [p.city, p.state, p.country].filter(Boolean).map(escapeHtml).join(', ');
-  const locEl = loc ? `<span class="loc">${loc}</span>` : '';
-
-  // Posted date
+  // Header row: profile code (left) + posted date pill (right)
+  const code = extractProfileCode(p.raw_text);
+  const codeEl = code
+    ? `<span class="profile-code"><span class="pc-label">Profile</span><span class="pc-num">${escapeHtml(code)}</span></span>`
+    : '';
   const posted = p.posted_at ? p.posted_at.slice(0,10) : '';
-  const postedEl = posted ? `<div class="posted">Posted · ${posted}</div>` : '';
+  const postedEl = posted ? `<span class="posted">Posted · ${posted}</span>` : '';
+  const headerRow = (code || posted) ? `<div class="card-header">${codeEl}${postedEl}</div>` : '';
 
-  // Pull complexion (and a few other quick facts) from raw text
+  // Chip row: gender, age, location (city + state only — no country)
+  const genderClass = p.gender || 'unknown';
+  const genderLabel = p.gender || 'unknown';
+  const genderBadge = `<span class="gender-badge gender-${genderClass}">${escapeHtml(genderLabel)}</span>`;
+  const ageEl = p.age != null ? `<span class="age-badge">${p.age}</span>` : '';
+
+  const locParts = [p.city, p.state].filter(Boolean);
+  const locText = locParts.length
+    ? locParts.map(escapeHtml).join(', ')
+    : (p.country ? escapeHtml(p.country) : '');
+  const locEl = locText ? `<span class="loc-badge">${locText}</span>` : '';
+
+  // Pull complexion from raw text for the highlighted chip below
   const pairs = parseRawProfile(p.raw_text);
   const lookup = {};
   for (const [k,v] of pairs) lookup[k.toLowerCase()] = v;
@@ -896,13 +907,13 @@ function renderCard(p, opts){
     : '';
 
   return `<div class="card${opts.isNew?' new':''}">
+    ${headerRow}
     <div class="head-line">${genderBadge}${ageEl}${locEl}</div>
-    ${postedEl}
     ${facts.length?`<div class="fact-row">${facts.join('')}</div>`:''}
     ${lookingFor}
     <details class="complete">
       <summary><span class="caret">›</span>Complete details</summary>
-      <div class="complete-body">${renderCompleteDetails(p)}</div>
+      <div class="complete-body">${formatRawProfile(p.raw_text)}</div>
     </details>
     <div class="foot">
       <a href="${p.telegram_url}" target="_blank" rel="noopener">Open in Telegram ↗</a>
