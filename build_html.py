@@ -227,7 +227,7 @@ aside h3:first-of-type{margin-top:0}
 aside h3::after{content:"";flex:1;height:1px;background:var(--border-soft)}
 aside .field-help{
   font:400 11.5px/1.4 'Inter',sans-serif;color:var(--muted);
-  margin:-6px 0 8px;
+  margin:9px 2px 6px;
 }
 aside label{display:block;margin:4px 0;font-size:13px;color:var(--ink-soft)}
 aside input[type=text],aside input[type=number],aside input[type=date],aside select{
@@ -433,6 +433,7 @@ aside .filter-actions{
 .loading-overlay{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:50px 24px 30px;color:var(--muted);
+  text-align:center;width:100%;
 }
 .spinner-mark{color:var(--accent);animation:spinPulse 1.6s ease-in-out infinite}
 .loading-text{
@@ -728,6 +729,25 @@ let activePreset = null;
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function activeData(){ return dataCache[activeChannel] || []; }
 
+const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDate(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.slice(0,10);
+  const day = d.getUTCDate();
+  const month = _MONTHS[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  const lastTwo = day % 100;
+  const lastOne = day % 10;
+  let suffix = 'th';
+  if (lastTwo < 11 || lastTwo > 13){
+    if (lastOne === 1) suffix = 'st';
+    else if (lastOne === 2) suffix = 'nd';
+    else if (lastOne === 3) suffix = 'rd';
+  }
+  return `${day}${suffix} ${month} ${year}`;
+}
+
 // ============ LAZY DATA LOADING ============
 function logoSpinnerSVG(){
   return `<svg viewBox="0 0 60 32" width="56" height="30" xmlns="http://www.w3.org/2000/svg">
@@ -885,6 +905,9 @@ function rebuildDynamicLists(){
   fillMaritalBox(document.getElementById('maritalBox'), uniq(data.map(p=>p.marital_status)).sort());
   document.querySelectorAll('[data-marital]').forEach(c =>
     c.addEventListener('change', () => { page=1; renderBrowse(); }));
+  // Default country = India (when data has it). Applied on first load and channel switches.
+  const indiaOpt = [...document.getElementById('country').options].find(o => o.value === 'India');
+  if (indiaOpt) indiaOpt.selected = true;
 }
 
 // ============ FILTER ============
@@ -1047,7 +1070,7 @@ function renderCard(p){
   const codeEl = code
     ? `<span class="profile-code"><span class="pc-label">Profile</span><span class="pc-num">${escapeHtml(code)}</span></span>`
     : '';
-  const posted = p.posted_at ? p.posted_at.slice(0,10) : '';
+  const posted = formatDate(p.posted_at);
   const postedEl = posted ? `<span class="posted">Posted · ${posted}</span>` : '';
   const headerRow = (code || posted) ? `<div class="card-header">${codeEl}${postedEl}</div>` : '';
 
