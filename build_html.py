@@ -487,10 +487,37 @@ aside .filter-actions{
 .prefs-empty p{color:var(--ink-soft);font-size:14px;line-height:1.6;margin:0 0 22px}
 .tab .badge#prefsBadge{background:var(--accent);font-size:8px;padding:3px 5px;line-height:1}
 
+/* ---------- Source badge (which channel a profile came from) ---------- */
+.card .card-header .ch-left{
+  display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.source-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:6px;
+  background:var(--bg);border:1px solid var(--border-soft);
+  font:500 11px/1.3 'Inter',sans-serif;
+  color:var(--ink-soft);letter-spacing:.01em;
+  white-space:nowrap;
+}
+.source-badge::before{
+  content:"";width:6px;height:6px;border-radius:50%;
+  background:var(--src-color, var(--muted));
+  flex-shrink:0;
+}
+.source-badge.src-salafimarriage1{--src-color:#0F4C3A}
+.source-badge.src-salafizawj_nikah{--src-color:#A56A2C}
+.src-dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--src-color, var(--muted));
+  margin-right:2px;flex-shrink:0;
+}
+.src-dot.src-salafimarriage1{--src-color:#0F4C3A}
+.src-dot.src-salafizawj_nikah{--src-color:#A56A2C}
+
 /* ---------- Shortlist tab ---------- */
 .shortlist-header{
   display:flex;justify-content:space-between;align-items:flex-end;
-  flex-wrap:wrap;gap:12px;margin-bottom:18px;
+  flex-wrap:wrap;gap:12px;margin-bottom:14px;
 }
 .shortlist-header h2{
   margin:0;font:700 24px/1.2 'Playfair Display',Georgia,serif;
@@ -499,6 +526,29 @@ aside .filter-actions{
 .shortlist-header h2 small{
   display:inline-block;font:500 13px/1.3 'Inter',sans-serif;
   color:var(--muted);margin-left:10px;letter-spacing:0;
+}
+.shortlist-filter{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;
+}
+.shortlist-filter button{
+  background:var(--panel);
+  border:1px solid var(--border);border-radius:999px;
+  padding:7px 14px;cursor:pointer;
+  font:500 12.5px/1 'Inter',sans-serif;color:var(--ink-soft);
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all var(--t);
+}
+.shortlist-filter button:hover{border-color:var(--accent);color:var(--accent)}
+.shortlist-filter button.active{
+  background:var(--accent);color:#fff;border-color:var(--accent);
+}
+.shortlist-filter .cnt{
+  background:var(--accent-soft);color:var(--accent);
+  padding:1px 8px;border-radius:999px;
+  font-size:11px;font-weight:700;line-height:1.4;
+}
+.shortlist-filter button.active .cnt{
+  background:rgba(255,255,255,.18);color:#fff;
 }
 .shortlist-empty{
   text-align:center;padding:70px 24px;
@@ -510,6 +560,7 @@ aside .filter-actions{
   margin:0 0 10px;font:700 22px/1.2 'Playfair Display',Georgia,serif;color:var(--accent);
 }
 .shortlist-empty p{color:var(--ink-soft);font-size:14px;line-height:1.6;margin:0}
+.shortlist-empty em{color:var(--accent);font-style:normal;font-weight:600}
 
 /* ---------- Pagination & empty ---------- */
 .pagination{
@@ -948,32 +999,56 @@ function renderPrefsTab(){
     </div>`;
 }
 
-// ============ SHORTLIST (per channel) ============
-function shortlistKey(){ return `salafi_shortlist_${activeChannel}_v1`; }
-function loadShortlist(){
-  try { return JSON.parse(localStorage.getItem(shortlistKey())) || []; } catch(e){ return []; }
+// ============ SHORTLIST (universal across channels) ============
+// Storage shape: a single array of "channel:msg_id" strings. One source of
+// truth regardless of which channel is active in Browse.
+const SHORTLIST_KEY = 'salafi_shortlist_v1';
+
+function migrateShortlistStorage(){
+  // One-time migration from the older per-channel keys.
+  if (localStorage.getItem(SHORTLIST_KEY) !== null) return;
+  const merged = [];
+  for (const ch of CHANNELS){
+    const oldKey = `salafi_shortlist_${ch.id}_v1`;
+    try {
+      const arr = JSON.parse(localStorage.getItem(oldKey) || '[]');
+      for (const mid of arr) merged.push(`${ch.id}:${mid}`);
+      localStorage.removeItem(oldKey);
+    } catch(e){}
+  }
+  if (merged.length) localStorage.setItem(SHORTLIST_KEY, JSON.stringify(merged));
 }
-function saveShortlist(arr){ localStorage.setItem(shortlistKey(), JSON.stringify(arr)); }
-function isShortlisted(msg_id){ return loadShortlist().indexOf(msg_id) >= 0; }
-function toggleShortlist(msg_id){
+
+function loadShortlist(){
+  try { return JSON.parse(localStorage.getItem(SHORTLIST_KEY)) || []; } catch(e){ return []; }
+}
+function saveShortlist(arr){ localStorage.setItem(SHORTLIST_KEY, JSON.stringify(arr)); }
+function entryFor(channel, msg_id){ return `${channel}:${msg_id}`; }
+function isShortlisted(channel, msg_id){ return loadShortlist().indexOf(entryFor(channel, msg_id)) >= 0; }
+
+function toggleShortlistFromBtn(btn){
+  toggleShortlist(btn.dataset.channel, parseInt(btn.dataset.msgId, 10));
+}
+function toggleShortlist(channel, msg_id){
   const list = loadShortlist();
-  const idx = list.indexOf(msg_id);
+  const entry = entryFor(channel, msg_id);
+  const idx = list.indexOf(entry);
   const wasOn = idx >= 0;
   if (wasOn) list.splice(idx, 1);
-  else list.push(msg_id);
+  else list.push(entry);
   saveShortlist(list);
-  // Update any visible heart buttons for this msg_id (Browse + Shortlist tabs)
-  document.querySelectorAll(`.shortlist-btn[data-msg-id="${msg_id}"]`).forEach(btn => {
+  // Update every visible heart button for this specific channel+msg_id.
+  document.querySelectorAll(`.shortlist-btn[data-entry="${entry}"]`).forEach(btn => {
     btn.classList.toggle('on', !wasOn);
     btn.querySelector('.heart-icon').textContent = wasOn ? '♡' : '♥';
     btn.querySelector('span:last-child').textContent = wasOn ? 'Shortlist' : 'Shortlisted';
   });
-  // If Shortlist tab is active and we just removed one, re-render
   if (document.getElementById('shortlist-section').classList.contains('active')){
     renderShortlist();
   }
   updateShortlistBadge();
 }
+
 function updateShortlistBadge(){
   const n = loadShortlist().length;
   const b = document.getElementById('shortlistBadge');
@@ -981,30 +1056,101 @@ function updateShortlistBadge(){
   b.textContent = n;
   b.classList.toggle('zero', n === 0);
 }
-function renderShortlist(){
+
+function shortlistByChannel(){
+  const list = loadShortlist();
+  const groups = {};
+  for (const entry of list){
+    const [ch] = entry.split(':');
+    groups[ch] = (groups[ch] || 0) + 1;
+  }
+  return groups;
+}
+
+async function renderShortlist(){
   const host = document.getElementById('shortlistContent');
   if (!host) return;
-  const data = activeData();
-  const list = loadShortlist();
-  const profiles = data.filter(p => list.includes(p.msg_id));
 
-  let header = `<div class="shortlist-header">
-    <h2>Shortlist <small>${escapeHtml(channelLabel(activeChannel))} · ${profiles.length} of ${list.length} saved</small></h2>
+  const list = loadShortlist();
+  const byCh = shortlistByChannel();
+  const channelsWithEntries = Object.keys(byCh);
+  const currentFilter = host.dataset.filter || 'all';
+
+  // Header
+  const headerLabel = list.length === 0
+    ? 'no profiles saved yet'
+    : `${list.length} saved across ${channelsWithEntries.length} channel${channelsWithEntries.length === 1 ? '' : 's'}`;
+
+  let html = `<div class="shortlist-header">
+    <h2>Shortlist <small>${headerLabel}</small></h2>
   </div>`;
 
-  if (!data.length){
-    host.innerHTML = header + `<div class="loading-overlay"><div class="spinner-mark">${logoSpinnerSVG()}</div><div class="loading-text">Loading profiles…</div></div>`;
-    return;
+  // Filter chips (only if 2+ channels and 1+ entries)
+  if (CHANNELS.length >= 2 && list.length > 0){
+    html += `<div class="shortlist-filter" role="tablist">
+      <button class="${currentFilter==='all'?'active':''}" data-filter="all">All<span class="cnt">${list.length}</span></button>
+      ${CHANNELS.map(c => {
+        const cnt = byCh[c.id] || 0;
+        if (cnt === 0) return '';
+        return `<button class="${currentFilter===c.id?'active':''}" data-filter="${escapeHtml(c.id)}"><span class="src-dot src-${escapeHtml(c.id)}"></span>${escapeHtml(c.label)}<span class="cnt">${cnt}</span></button>`;
+      }).join('')}
+    </div>`;
   }
+
+  // Empty state
   if (!list.length){
-    host.innerHTML = header + `<div class="shortlist-empty">
+    html += `<div class="shortlist-empty">
       <div class="se-icon">♡</div>
       <h3>No profiles shortlisted yet</h3>
-      <p>Tap the ♡ button on any profile to save it here.<br>Shortlisted profiles stay visible in Browse too — this tab just keeps the ones you've marked.</p>
+      <p>Tap the ♡ button on any profile to save it here.<br>The Shortlist tab collects saved profiles from <em>all channels</em> in one place — each card shows where it came from.</p>
     </div>`;
+    host.innerHTML = html;
     return;
   }
-  host.innerHTML = header + profiles.map(p => renderCard(p)).join('');
+
+  // Determine which channels' data we need to fetch
+  const neededChannels = currentFilter === 'all'
+    ? channelsWithEntries
+    : [currentFilter];
+  const allCached = neededChannels.every(ch => dataCache[ch]);
+
+  if (!allCached){
+    // Show a loading state, fetch missing data, then re-render
+    html += `<div class="loading-overlay"><div class="spinner-mark">${logoSpinnerSVG()}</div><div class="loading-text">Loading shortlisted profiles…</div></div>`;
+    host.innerHTML = html;
+    wireShortlistFilters();
+    await Promise.all(neededChannels.map(ch => ensureChannelData(ch).catch(() => null)));
+    return renderShortlist();
+  }
+
+  // Resolve entries to profile objects (preserving shortlist order = oldest-first)
+  const profiles = [];
+  for (const entry of list){
+    const [ch, midStr] = entry.split(':');
+    if (currentFilter !== 'all' && currentFilter !== ch) continue;
+    const profile = (dataCache[ch] || []).find(p => p.msg_id === parseInt(midStr, 10));
+    if (profile) profiles.push(profile);
+  }
+
+  if (!profiles.length){
+    html += `<div class="empty"><span class="icon">🔎</span>No profiles match this filter.</div>`;
+  } else {
+    html += profiles.map(p => renderCard(p)).join('');
+  }
+
+  host.innerHTML = html;
+  wireShortlistFilters();
+}
+
+function wireShortlistFilters(){
+  const host = document.getElementById('shortlistContent');
+  if (!host) return;
+  host.querySelectorAll('.shortlist-filter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      host.dataset.filter = btn.dataset.filter;
+      renderShortlist();
+    });
+  });
 }
 
 const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1355,9 +1501,13 @@ function renderCard(p){
   const codeEl = code
     ? `<span class="profile-code"><span class="pc-label">Profile</span><span class="pc-num">${escapeHtml(code)}</span></span>`
     : '';
+  const sourceEl = p.channel
+    ? `<span class="source-badge src-${escapeHtml(p.channel)}" title="From ${escapeHtml(channelLabel(p.channel))}">${escapeHtml(channelLabel(p.channel))}</span>`
+    : '';
   const posted = formatDate(p.posted_at);
   const postedEl = posted ? `<span class="posted">Posted · ${posted}</span>` : '';
-  const headerRow = (code || posted) ? `<div class="card-header">${codeEl}${postedEl}</div>` : '';
+  const headerLeft = (codeEl || sourceEl) ? `<div class="ch-left">${codeEl}${sourceEl}</div>` : '';
+  const headerRow = (headerLeft || posted) ? `<div class="card-header">${headerLeft}${postedEl}</div>` : '';
 
   const genderClass = p.gender || '';
   const genderLabel = p.gender || '';
@@ -1392,14 +1542,15 @@ function renderCard(p){
     </details>
     <div class="foot">
       <a class="tg-link" href="${p.telegram_url}" target="_blank" rel="noopener">Open in Telegram ↗</a>
-      ${shortlistBtnHtml(p.msg_id)}
+      ${shortlistBtnHtml(p)}
     </div>
   </div>`;
 }
 
-function shortlistBtnHtml(msg_id){
-  const on = isShortlisted(msg_id);
-  return `<button class="shortlist-btn${on?' on':''}" data-msg-id="${msg_id}" onclick="toggleShortlist(${msg_id})" aria-label="${on?'Remove from':'Add to'} shortlist">
+function shortlistBtnHtml(p){
+  const on = isShortlisted(p.channel, p.msg_id);
+  const entry = entryFor(p.channel, p.msg_id);
+  return `<button class="shortlist-btn${on?' on':''}" data-entry="${escapeHtml(entry)}" data-channel="${escapeHtml(p.channel)}" data-msg-id="${p.msg_id}" onclick="toggleShortlistFromBtn(this)" aria-label="${on?'Remove from':'Add to'} shortlist">
     <span class="heart-icon">${on?'♥':'♡'}</span>
     <span>${on?'Shortlisted':'Shortlist'}</span>
   </button>`;
@@ -1471,6 +1622,7 @@ function resetFilters(opts){
 
 // ============ FIRST RENDER ============
 (async () => {
+  migrateShortlistStorage();
   renderHeaderMeta();
   renderChannelSwitch();
   updatePrefsBadge();
