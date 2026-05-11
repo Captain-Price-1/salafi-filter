@@ -255,6 +255,25 @@ aside input:focus,aside select:focus{
 aside select[multiple]{padding:6px;min-height:140px}
 aside select[multiple] option{padding:6px 8px;border-radius:4px;font-size:13px}
 aside select[multiple] option:checked{background:var(--accent-soft);color:var(--accent);font-weight:500}
+
+/* Single-select dropdown — clean appearance with custom caret */
+select.single-dd,
+.pf-field select.single-dd{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%237E8A85' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  background-size:11px;
+  padding-right:34px;
+  cursor:pointer;
+}
+select.single-dd:hover{border-color:var(--accent)}
+select.single-dd:focus{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%230F4C3A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+/* Style the placeholder option (value="") distinctly */
+select.single-dd option[value=""]{color:var(--muted-soft)}
+select.single-dd option{color:var(--ink);padding:6px 4px}
 .range{display:flex;gap:8px;align-items:center;min-width:0}
 .range input{width:0;flex:1;min-width:0;text-align:center}
 .range input[type=date]{padding:8px 6px;font-size:13px}
@@ -878,10 +897,10 @@ aside .filter-actions{
       <div id="maritalBox"></div>
 
       <h3>Country</h3>
-      <select id="country" multiple size="6"></select>
+      <select id="country" class="single-dd"><option value="">Any country</option></select>
 
       <h3>State</h3>
-      <select id="state" multiple size="6"></select>
+      <select id="state" class="single-dd"><option value="">Any state</option></select>
 
       <h3>City</h3>
       <input type="text" id="city" placeholder="Type city name…">
@@ -983,7 +1002,13 @@ function migratePrefsStorage(){
 }
 
 function loadSavedPrefs(){
-  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || null; } catch(e){ return null; }
+  let p;
+  try { p = JSON.parse(localStorage.getItem(PREFS_KEY)) || null; } catch(e){ return null; }
+  if (!p) return null;
+  // Migrate legacy multi-select arrays → single-select strings.
+  if (Array.isArray(p.countries)){ p.country = p.countries[0] || null; delete p.countries; }
+  if (Array.isArray(p.states)){    p.state   = p.states[0]   || null; delete p.states; }
+  return p;
 }
 function hasSavedPrefs(){
   const p = loadSavedPrefs();
@@ -995,8 +1020,8 @@ function prefsAreMeaningful(p){
   if (p.gender) return true;
   if ((p.ageMin && p.ageMin > 18) || (p.ageMax && p.ageMax < 60)) return true;
   if (p.dateFrom || p.dateTo) return true;
-  if ((p.countries||[]).length) return true;
-  if ((p.states||[]).length) return true;
+  if (p.country) return true;
+  if (p.state) return true;
   if ((p.cityTerms||[]).length) return true;
   if (p.profession) return true;
   if (p.education) return true;
@@ -1017,12 +1042,12 @@ function applySavedPrefs(){
   document.getElementById('city').value       = (p.cityTerms||[]).join(', ');
   document.getElementById('profession').value = p.profession || '';
   document.getElementById('education').value  = p.education || '';
-  [...document.querySelectorAll('#country option')].forEach(o => {
-    o.selected = (p.countries||[]).includes(o.value);
-  });
-  [...document.querySelectorAll('#state option')].forEach(o => {
-    o.selected = (p.states||[]).includes(o.value);
-  });
+  const cSel = document.getElementById('country');
+  const sSel = document.getElementById('state');
+  ensureSelectHas(cSel, p.country);
+  ensureSelectHas(sSel, p.state);
+  cSel.value = p.country || '';
+  sSel.value = p.state   || '';
   document.querySelectorAll('[data-marital]').forEach(cb => {
     cb.checked = (p.marital||[]).includes(cb.value);
   });
@@ -1056,7 +1081,6 @@ function renderPrefsTab(){
   const statuses  = uniqAllChannelsField('marital_status');
 
   // Pre-select helpers
-  const isSel = (arr, v) => (arr||[]).includes(v) ? ' selected' : '';
   const isChk = (arr, v) => (arr||[]).includes(v) ? ' checked' : '';
 
   host.innerHTML = `
@@ -1129,14 +1153,16 @@ function renderPrefsTab(){
         <div class="pf-row">
           <div class="pf-field">
             <label>Country</label>
-            <select id="p_country" multiple size="6">
-              ${countries.map(c => `<option value="${escapeHtml(c)}"${isSel(p.countries, c)}>${escapeHtml(c)}</option>`).join('')}
+            <select id="p_country" class="single-dd">
+              <option value=""${p.country ? '' : ' selected'}>Any country</option>
+              ${countries.map(c => `<option value="${escapeHtml(c)}"${p.country === c ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('')}
             </select>
           </div>
           <div class="pf-field">
             <label>State</label>
-            <select id="p_state" multiple size="6">
-              ${states.map(s => `<option value="${escapeHtml(s)}"${isSel(p.states, s)}>${escapeHtml(s)}</option>`).join('')}
+            <select id="p_state" class="single-dd">
+              <option value=""${p.state ? '' : ' selected'}>Any state</option>
+              ${states.map(s => `<option value="${escapeHtml(s)}"${p.state === s ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -1173,8 +1199,8 @@ function readPrefsForm(){
     ageMax:     parseInt(document.getElementById('p_ageMax').value) || 999,
     dateFrom:   document.getElementById('p_dateFrom').value || null,
     dateTo:     document.getElementById('p_dateTo').value || null,
-    countries:  [...document.querySelectorAll('#p_country option:checked')].map(o => o.value),
-    states:     [...document.querySelectorAll('#p_state option:checked')].map(o => o.value),
+    country:    document.getElementById('p_country').value || null,
+    state:      document.getElementById('p_state').value || null,
     cityTerms:  document.getElementById('p_city').value.trim().toLowerCase().split(',').map(s => s.trim()).filter(Boolean),
     profession: document.getElementById('p_profession').value.trim() || null,
     education:  document.getElementById('p_education').value.trim() || null,
@@ -1546,9 +1572,29 @@ document.addEventListener('keydown', e => { if (e.key==='Escape') closeDrawer();
 
 // ============ DYNAMIC DROPDOWNS ============
 function uniq(arr){ return [...new Set(arr.filter(Boolean))]; }
-function fillSelect(sel, values){
+function fillSingleSelect(sel, values, placeholder){
+  const current = sel.value;
   sel.innerHTML = '';
-  values.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  const ph = document.createElement('option');
+  ph.value = '';
+  ph.textContent = placeholder || 'Any';
+  sel.appendChild(ph);
+  for (const v of values){
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  }
+  if (current && values.includes(current)) sel.value = current;
+}
+// Ensure a select has the given option (so a saved pref value is selectable
+// even if the active channel's data doesn't include it).
+function ensureSelectHas(sel, val){
+  if (!val) return;
+  if (![...sel.options].some(o => o.value === val)){
+    const o = document.createElement('option');
+    o.value = val; o.textContent = val;
+    sel.appendChild(o);
+  }
 }
 function fillMaritalBox(box, statuses){
   box.innerHTML = '';
@@ -1561,14 +1607,14 @@ function fillMaritalBox(box, statuses){
 }
 function rebuildDynamicLists(){
   const data = activeData();
-  fillSelect(document.getElementById('country'), uniq(data.map(p=>p.country)).sort());
-  fillSelect(document.getElementById('state'),   uniq(data.map(p=>p.state)).sort());
+  fillSingleSelect(document.getElementById('country'), uniq(data.map(p=>p.country)).sort(), 'Any country');
+  fillSingleSelect(document.getElementById('state'),   uniq(data.map(p=>p.state)).sort(),   'Any state');
   fillMaritalBox(document.getElementById('maritalBox'), uniq(data.map(p=>p.marital_status)).sort());
   document.querySelectorAll('[data-marital]').forEach(c =>
     c.addEventListener('change', () => { page=1; renderBrowse(); }));
-  // Default country = India (when data has it). Applied on first load and channel switches.
-  const indiaOpt = [...document.getElementById('country').options].find(o => o.value === 'India');
-  if (indiaOpt) indiaOpt.selected = true;
+  // Default country = India (when no saved prefs override).
+  const country = document.getElementById('country');
+  if ([...country.options].some(o => o.value === 'India')) country.value = 'India';
 }
 
 // ============ FILTER ============
@@ -1580,8 +1626,8 @@ function browseFilters(){
     ageMax:     parseInt(document.getElementById('ageMax').value)||999,
     dateFrom:   document.getElementById('dateFrom').value || null,
     dateTo:     document.getElementById('dateTo').value || null,
-    countries:  [...document.querySelectorAll('#country option:checked')].map(o=>o.value),
-    states:     [...document.querySelectorAll('#state option:checked')].map(o=>o.value),
+    country:    document.getElementById('country').value || null,
+    state:      document.getElementById('state').value || null,
     cityTerms:  document.getElementById('city').value.trim().toLowerCase().split(',').map(s=>s.trim()).filter(Boolean),
     profession: document.getElementById('profession').value.trim() || null,
     education:  document.getElementById('education').value.trim() || null,
@@ -1604,8 +1650,8 @@ function matches(p, c){
     if (c.dateFrom && d < c.dateFrom) return false;
     if (c.dateTo   && d > c.dateTo)   return false;
   }
-  if (c.countries && c.countries.length && !c.countries.includes(p.country)) return false;
-  if (c.states    && c.states.length    && !c.states.includes(p.state))      return false;
+  if (c.country && p.country !== c.country) return false;
+  if (c.state   && p.state   !== c.state)   return false;
   if (c.cityTerms && c.cityTerms.length){
     const loc = ((p.city||'')+' '+(p.state||'')).toLowerCase();
     if (!c.cityTerms.some(t => loc.includes(t))) return false;
@@ -1623,8 +1669,8 @@ function activeFilterCount(){
   if (document.getElementById('gender').value) n++;
   if (document.getElementById('ageMin').value || document.getElementById('ageMax').value) n++;
   if (document.getElementById('dateFrom').value || document.getElementById('dateTo').value) n++;
-  if (document.querySelectorAll('#country option:checked').length) n++;
-  if (document.querySelectorAll('#state option:checked').length) n++;
+  if (document.getElementById('country').value) n++;
+  if (document.getElementById('state').value) n++;
   if (document.getElementById('city').value.trim()) n++;
   if (document.getElementById('profession').value.trim()) n++;
   if (document.getElementById('education').value.trim()) n++;
@@ -1836,7 +1882,8 @@ function renderBrowse(){
 function resetFilters(opts){
   ['q','ageMin','ageMax','city','profession','education','dateFrom','dateTo'].forEach(id => document.getElementById(id).value='');
   document.getElementById('gender').value = '';
-  ['country','state'].forEach(id => [...document.querySelectorAll(`#${id} option`)].forEach(o => o.selected = false));
+  document.getElementById('country').value = '';
+  document.getElementById('state').value = '';
   document.querySelectorAll('[data-marital]').forEach(c => c.checked = false);
   document.querySelectorAll('#datePresets button').forEach(b => b.classList.remove('active'));
   activePreset = null;
@@ -1849,6 +1896,7 @@ function resetFilters(opts){
   .forEach(id => document.getElementById(id).addEventListener('input', () => { page=1; renderBrowse(); }));
 ['country','state'].forEach(id =>
   document.getElementById(id).addEventListener('change', () => { page=1; renderBrowse(); }));
+// Browse aside dropdowns also need styling cleanup for single-select native UI
 
 // ============ FIRST RENDER ============
 (async () => {
