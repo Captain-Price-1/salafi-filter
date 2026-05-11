@@ -66,7 +66,8 @@ for ch in channels_meta:
     print(f"  data/{ch['id']}.json: {len(rows):,} profiles, {len(txt)//1024:,} KB")
 
 build_id = str(int(time.time()))
-generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+# ISO 8601 timestamp — formatted client-side in user's local timezone with AM/PM.
+generated_at = datetime.now().isoformat(timespec="seconds")
 total_profiles = sum(c["count"] for c in channels_meta)
 channels_json = json.dumps(channels_meta, ensure_ascii=False)
 print(f"Total: {total_profiles:,} profiles across {len(channels_meta)} channels (build {build_id})")
@@ -221,8 +222,10 @@ aside{
   border-radius:var(--radius);
   padding:22px;
   position:sticky;top:188px;
-  max-height:calc(100vh - 208px);overflow-y:auto;
+  max-height:calc(100vh - 208px);
+  overflow-y:auto;overflow-x:hidden;
   box-shadow:var(--shadow-sm);
+  min-width:0;
 }
 aside h3{
   font:600 11px/1 'Inter',sans-serif;
@@ -252,9 +255,10 @@ aside input:focus,aside select:focus{
 aside select[multiple]{padding:6px;min-height:140px}
 aside select[multiple] option{padding:6px 8px;border-radius:4px;font-size:13px}
 aside select[multiple] option:checked{background:var(--accent-soft);color:var(--accent);font-weight:500}
-.range{display:flex;gap:8px;align-items:center}
-.range input{width:0;flex:1;text-align:center}
-.range span{color:var(--muted-soft);font-size:14px}
+.range{display:flex;gap:8px;align-items:center;min-width:0}
+.range input{width:0;flex:1;min-width:0;text-align:center}
+.range input[type=date]{padding:8px 6px;font-size:13px}
+.range span{color:var(--muted-soft);font-size:14px;flex-shrink:0}
 .date-presets{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .date-presets button{
   background:var(--bg);border:1px solid var(--border);
@@ -438,7 +442,66 @@ aside .filter-actions{
 .shortlist-btn.on .heart-icon{transform:scale(1.15);animation:pop 280ms ease-out}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1.15)}}
 
-/* ---------- Preferences tab ---------- */
+/* ---------- Preferences tab (editable form) ---------- */
+.prefs-empty-banner{
+  display:flex;align-items:center;gap:14px;
+  background:var(--gold-soft);color:#8C6B36;
+  border:1px solid #E5CFA7;border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:20px;max-width:760px;margin-left:auto;margin-right:auto;
+  animation:cardIn 320ms ease-out backwards;
+}
+.prefs-empty-banner .peb-icon{font-size:24px;flex-shrink:0;animation:floaty 3.5s ease-in-out infinite}
+.prefs-empty-banner strong{display:block;font-size:14.5px;color:#8C6B36;margin-bottom:2px}
+.prefs-empty-banner small{display:block;font-size:12.5px;color:#8C6B36;opacity:.85}
+
+.prefs-form-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 30px;
+  max-width:760px;margin:0 auto;
+  box-shadow:var(--shadow-sm);
+  animation:cardIn 320ms ease-out backwards;
+}
+.prefs-form-card h2{
+  margin:0 0 4px;font:700 26px/1.2 'Playfair Display',Georgia,serif;
+  color:var(--accent);letter-spacing:-.01em;
+}
+.prefs-form-card .subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
+.prefs-form-card .subtitle strong{color:var(--ink-soft);font-weight:600}
+.prefs-form{display:flex;flex-direction:column;gap:16px}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pf-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pf-field>label{
+  font:600 11px/1 'Inter',sans-serif;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);
+}
+.pf-field input[type=text],
+.pf-field input[type=number],
+.pf-field input[type=date],
+.pf-field select{
+  width:100%;padding:10px 12px;
+  border:1px solid var(--border);border-radius:var(--radius-xs);
+  font:14px/1.2 'Inter',sans-serif;
+  background:#fff;color:var(--ink);
+  transition:border-color var(--t),box-shadow var(--t);
+}
+.pf-field input:focus,.pf-field select:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);
+}
+.pf-field select[multiple]{padding:6px;min-height:160px}
+.pf-field select[multiple] option{padding:6px 8px;border-radius:4px;font-size:13px}
+.pf-field select[multiple] option:checked{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.pf-help{font-size:11.5px;color:var(--muted);line-height:1.4}
+.pf-checks{
+  display:flex;flex-direction:column;gap:0;
+  border:1px solid var(--border);border-radius:var(--radius-xs);
+  padding:8px 12px;background:#fff;min-height:42px;
+}
+.prefs-form-actions{
+  display:flex;gap:10px;margin-top:28px;flex-wrap:wrap;
+  padding-top:20px;border-top:1px solid var(--border-soft);
+}
+
 .prefs-applied-banner{
   display:flex;align-items:center;gap:12px;
   background:var(--accent-soft);color:var(--accent);
@@ -714,6 +777,11 @@ aside .filter-actions{
   }
   .drawer-close:hover{color:var(--ink);background:var(--accent-pale)}
 }
+@media (max-width: 700px){
+  .pf-row{grid-template-columns:1fr;gap:14px}
+  .prefs-form-card{padding:22px 18px}
+  .prefs-form-card h2{font-size:22px}
+}
 @media (max-width: 600px){
   header{padding:16px 16px 0}
   .brand{font-size:24px;gap:10px}
@@ -725,6 +793,8 @@ aside .filter-actions{
   .tab-section{padding:18px 14px}
   .card{padding:14px 16px}
   .card .head-line{gap:6px 8px}
+  .card .card-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .card .card-header .ch-left{gap:8px}
   .card .lookingfor{font-size:13px;padding:9px 12px}
   .summary{font-size:12px}
   .summary strong{font-size:15px}
@@ -732,6 +802,14 @@ aside .filter-actions{
   .pagination .pageinfo{flex-basis:100%;text-align:center;order:-1;margin-bottom:4px}
   .coming-soon{padding:54px 22px}
   .coming-soon h2{font-size:24px}
+  /* Tighter date input in the filter range so two fit side-by-side */
+  .range input[type=date]{padding:7px 4px;font-size:12.5px}
+  /* The filter aside drawer needs explicit width clamping on iPhone */
+  aside{width:100%;max-width:100%;box-sizing:border-box}
+  aside select[multiple]{min-height:130px}
+  /* Prefs form */
+  .pf-field select[multiple]{min-height:130px}
+  .prefs-empty-banner{padding:12px 14px;gap:10px;flex-wrap:wrap}
 }
 </style>
 </head>
@@ -815,8 +893,8 @@ aside .filter-actions{
       <input type="text" id="education" placeholder="e.g. mbbs">
 
       <div class="filter-actions">
-        <button class="btn primary" id="savePrefsBtn" onclick="savePrefs()">★ Save as my preferences</button>
         <button class="btn" onclick="resetFilters()">Reset filters</button>
+        <a class="btn ghost" onclick="switchTab('prefs');return false;" href="#">Edit my preferences →</a>
       </div>
     </aside>
     <div>
@@ -884,12 +962,33 @@ function channelLabel(id){
   return c ? c.label : '@' + id;
 }
 
-// ============ PREFERENCES (per channel) ============
-function prefsKey(){ return `salafi_prefs_${activeChannel}_v1`; }
-function loadSavedPrefs(){
-  try { return JSON.parse(localStorage.getItem(prefsKey())) || null; } catch(e){ return null; }
+// ============ PREFERENCES (universal — applies to all channels) ============
+const PREFS_KEY = 'salafi_prefs_v1';
+
+function migratePrefsStorage(){
+  if (localStorage.getItem(PREFS_KEY) !== null) return;
+  // Prefer the most recent per-channel prefs (any non-empty one).
+  for (const ch of CHANNELS){
+    const oldKey = `salafi_prefs_${ch.id}_v1`;
+    const val = localStorage.getItem(oldKey);
+    if (val){
+      localStorage.setItem(PREFS_KEY, val);
+      break;
+    }
+  }
+  // Clean up old keys.
+  for (const ch of CHANNELS){
+    localStorage.removeItem(`salafi_prefs_${ch.id}_v1`);
+  }
 }
-function hasSavedPrefs(){ return loadSavedPrefs() != null; }
+
+function loadSavedPrefs(){
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || null; } catch(e){ return null; }
+}
+function hasSavedPrefs(){
+  const p = loadSavedPrefs();
+  return prefsAreMeaningful(p);
+}
 function prefsAreMeaningful(p){
   if (!p) return false;
   if (p.keyword) return true;
@@ -904,25 +1003,8 @@ function prefsAreMeaningful(p){
   if ((p.marital||[]).length) return true;
   return false;
 }
-function savePrefs(){
-  const c = browseFilters();
-  if (!prefsAreMeaningful(c)){
-    alert('No filters set. Set at least one filter on the Browse tab, then save.');
-    return;
-  }
-  localStorage.setItem(prefsKey(), JSON.stringify(c));
-  const btn = document.getElementById('savePrefsBtn');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '✓ Saved as preferences';
-  setTimeout(() => { btn.innerHTML = orig; }, 1500);
-  updatePrefsBadge();
-}
-function clearSavedPrefs(){
-  localStorage.removeItem(prefsKey());
-  resetFilters();
-  renderPrefsTab();
-  updatePrefsBadge();
-}
+
+// Apply saved prefs to the Browse aside form fields (used on page load + channel switch).
 function applySavedPrefs(){
   const p = loadSavedPrefs();
   if (!p) return false;
@@ -951,52 +1033,185 @@ function updatePrefsBadge(){
   if (!b) return;
   b.classList.toggle('zero', !hasSavedPrefs());
 }
-function summarizePrefs(p){
-  const rows = [];
-  if (p.gender)                       rows.push(['Gender',  p.gender]);
-  if ((p.ageMin && p.ageMin > 18) || (p.ageMax && p.ageMax < 60))
-    rows.push(['Age',     `${p.ageMin || 18} – ${p.ageMax || 60}`]);
-  if (p.dateFrom || p.dateTo)         rows.push(['Posted',  `${p.dateFrom || '…'}  →  ${p.dateTo || '…'}`]);
-  if ((p.countries||[]).length)       rows.push(['Country', p.countries.join(', ')]);
-  if ((p.states||[]).length)          rows.push(['State',   p.states.join(', ')]);
-  if ((p.cityTerms||[]).length)       rows.push(['City',    p.cityTerms.join(', ')]);
-  if ((p.marital||[]).length)         rows.push(['Marital', p.marital.join(', ')]);
-  if (p.profession)                   rows.push(['Profession', p.profession]);
-  if (p.education)                    rows.push(['Education',  p.education]);
-  if (p.keyword)                      rows.push(['Keyword', p.keyword]);
-  return `<dl class="prefs-list">${rows.map(([k,v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>`;
+
+// ----- Preferences tab form -----
+// Builds a full filter form INSIDE the Preferences tab. Editing happens here,
+// not on Browse. Save → applies to Browse on next visit (and immediately).
+function uniqAllChannelsField(field){
+  const all = [];
+  for (const arr of Object.values(dataCache)){
+    for (const p of arr) if (p[field]) all.push(p[field]);
+  }
+  return [...new Set(all)].sort();
 }
+
 function renderPrefsTab(){
   const host = document.getElementById('prefsContent');
   if (!host) return;
-  const p = loadSavedPrefs();
-  if (!p || !prefsAreMeaningful(p)){
-    host.innerHTML = `
-      <div class="prefs-empty">
-        <div class="pe-icon">💍</div>
-        <h2>No preferences saved yet</h2>
-        <p>Set up your filter criteria once and we'll apply them automatically every time you visit. Each channel has its own preferences.</p>
-        <button class="btn primary" onclick="switchTab('browse')">Set filters in Browse →</button>
-      </div>`;
-    return;
-  }
+  const p = loadSavedPrefs() || {};
+  const isApplied = prefsAreMeaningful(p);
+
+  const countries = uniqAllChannelsField('country');
+  const states    = uniqAllChannelsField('state');
+  const statuses  = uniqAllChannelsField('marital_status');
+
+  // Pre-select helpers
+  const isSel = (arr, v) => (arr||[]).includes(v) ? ' selected' : '';
+  const isChk = (arr, v) => (arr||[]).includes(v) ? ' checked' : '';
+
   host.innerHTML = `
-    <div class="prefs-applied-banner">
-      <div class="pab-check">✓</div>
-      <div>
-        <strong>Your preferences are applied.</strong>
-        <small>Browse is automatically filtered using these criteria on every visit to ${escapeHtml(channelLabel(activeChannel))}.</small>
-      </div>
-    </div>
-    <div class="prefs-summary-card">
+    ${isApplied ? `
+      <div class="prefs-applied-banner">
+        <div class="pab-check">✓</div>
+        <div>
+          <strong>Your preferences are applied.</strong>
+          <small>The Browse tab automatically uses these filters on every visit, across all channels.</small>
+        </div>
+      </div>` : `
+      <div class="prefs-empty-banner">
+        <div class="peb-icon">💍</div>
+        <div>
+          <strong>No preferences saved yet.</strong>
+          <small>Set filters below and click Save. Browse will then auto-apply them on every visit.</small>
+        </div>
+      </div>`}
+
+    <div class="prefs-form-card">
       <h2>My Preferences</h2>
-      <div class="channel-hint">Saved for <strong>${escapeHtml(channelLabel(activeChannel))}</strong> · ${activeCount().toLocaleString()} profiles in this channel</div>
-      ${summarizePrefs(p)}
-      <div class="actions">
-        <button class="btn primary" onclick="switchTab('browse')">Edit in Browse →</button>
-        <button class="btn" onclick="if(confirm('Clear saved preferences for this channel?'))clearSavedPrefs()">Clear preferences</button>
+      <div class="subtitle">Universal — applies across <strong>${CHANNELS.length}</strong> channel${CHANNELS.length===1?'':'s'}</div>
+
+      <div class="prefs-form">
+        <div class="pf-field">
+          <label>Search profile text</label>
+          <input type="text" id="p_q" placeholder="Name, education, profession, keywords…" value="${escapeHtml(p.keyword || '')}">
+          <div class="pf-help">Searches every word in the original Telegram message.</div>
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label>Gender</label>
+            <select id="p_gender">
+              <option value=""${p.gender ? '' : ' selected'}>Any</option>
+              <option value="female"${p.gender === 'female' ? ' selected' : ''}>Female (sister)</option>
+              <option value="male"${p.gender === 'male' ? ' selected' : ''}>Male (brother)</option>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label>Marital status</label>
+            <div id="p_maritalBox" class="pf-checks">
+              ${statuses.map(s => `<label class="checkrow"><input type="checkbox" value="${escapeHtml(s)}" data-pmarital${isChk(p.marital, s)}> ${escapeHtml(s)}</label>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label>Minimum age</label>
+            <input type="number" id="p_ageMin" min="18" max="60" placeholder="18" value="${(p.ageMin && p.ageMin > 0) ? p.ageMin : ''}">
+          </div>
+          <div class="pf-field">
+            <label>Maximum age</label>
+            <input type="number" id="p_ageMax" min="18" max="60" placeholder="60" value="${(p.ageMax && p.ageMax < 999) ? p.ageMax : ''}">
+          </div>
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label>Posted after</label>
+            <input type="date" id="p_dateFrom" value="${escapeHtml(p.dateFrom || '')}">
+          </div>
+          <div class="pf-field">
+            <label>Posted before</label>
+            <input type="date" id="p_dateTo" value="${escapeHtml(p.dateTo || '')}">
+          </div>
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label>Country</label>
+            <select id="p_country" multiple size="6">
+              ${countries.map(c => `<option value="${escapeHtml(c)}"${isSel(p.countries, c)}>${escapeHtml(c)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="pf-field">
+            <label>State</label>
+            <select id="p_state" multiple size="6">
+              ${states.map(s => `<option value="${escapeHtml(s)}"${isSel(p.states, s)}>${escapeHtml(s)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="pf-field">
+          <label>City contains</label>
+          <input type="text" id="p_city" placeholder="Type city name(s), comma-separated" value="${escapeHtml((p.cityTerms||[]).join(', '))}">
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label>Profession contains</label>
+            <input type="text" id="p_profession" placeholder="e.g. doctor" value="${escapeHtml(p.profession || '')}">
+          </div>
+          <div class="pf-field">
+            <label>Education contains</label>
+            <input type="text" id="p_education" placeholder="e.g. mbbs" value="${escapeHtml(p.education || '')}">
+          </div>
+        </div>
+      </div>
+
+      <div class="prefs-form-actions">
+        <button class="btn primary" id="savePrefsBtn" onclick="savePrefsFromForm()">★ Save preferences</button>
+        <button class="btn" onclick="if(confirm('Clear all preferences? Browse will show all profiles again.'))clearAllPrefs()">Clear all</button>
       </div>
     </div>`;
+}
+
+function readPrefsForm(){
+  return {
+    keyword:    document.getElementById('p_q').value.trim() || null,
+    gender:     document.getElementById('p_gender').value || null,
+    ageMin:     parseInt(document.getElementById('p_ageMin').value) || 0,
+    ageMax:     parseInt(document.getElementById('p_ageMax').value) || 999,
+    dateFrom:   document.getElementById('p_dateFrom').value || null,
+    dateTo:     document.getElementById('p_dateTo').value || null,
+    countries:  [...document.querySelectorAll('#p_country option:checked')].map(o => o.value),
+    states:     [...document.querySelectorAll('#p_state option:checked')].map(o => o.value),
+    cityTerms:  document.getElementById('p_city').value.trim().toLowerCase().split(',').map(s => s.trim()).filter(Boolean),
+    profession: document.getElementById('p_profession').value.trim() || null,
+    education:  document.getElementById('p_education').value.trim() || null,
+    marital:    [...document.querySelectorAll('[data-pmarital]:checked')].map(c => c.value),
+  };
+}
+
+function savePrefsFromForm(){
+  const c = readPrefsForm();
+  if (!prefsAreMeaningful(c)){
+    alert('No filters set. Tick at least one filter to save preferences.');
+    return;
+  }
+  localStorage.setItem(PREFS_KEY, JSON.stringify(c));
+  // Apply immediately to Browse aside so going back shows the filter applied.
+  applySavedPrefs();
+  page = 1;
+  // Re-render Browse so the count + cards reflect the new prefs even if user
+  // doesn't switch tabs yet.
+  if (typeof renderBrowse === 'function') renderBrowse();
+  const btn = document.getElementById('savePrefsBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Saved';
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    renderPrefsTab();   // refresh the banner state
+  }, 1300);
+  updatePrefsBadge();
+}
+
+function clearAllPrefs(){
+  localStorage.removeItem(PREFS_KEY);
+  resetFilters({ rerender: false });
+  page = 1;
+  if (typeof renderBrowse === 'function') renderBrowse();
+  renderPrefsTab();
+  updatePrefsBadge();
 }
 
 // ============ SHORTLIST (universal across channels) ============
@@ -1154,22 +1369,37 @@ function wireShortlistFilters(){
 }
 
 const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const _MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function _ordinal(day){
+  const lastTwo = day % 100;
+  const lastOne = day % 10;
+  if (lastTwo >= 11 && lastTwo <= 13) return 'th';
+  if (lastOne === 1) return 'st';
+  if (lastOne === 2) return 'nd';
+  if (lastOne === 3) return 'rd';
+  return 'th';
+}
 function formatDate(iso){
+  // Profile posted dates — UTC (matches when Telegram displayed them).
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso.slice(0,10);
   const day = d.getUTCDate();
-  const month = _MONTHS[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-  const lastTwo = day % 100;
-  const lastOne = day % 10;
-  let suffix = 'th';
-  if (lastTwo < 11 || lastTwo > 13){
-    if (lastOne === 1) suffix = 'st';
-    else if (lastOne === 2) suffix = 'nd';
-    else if (lastOne === 3) suffix = 'rd';
-  }
-  return `${day}${suffix} ${month} ${year}`;
+  return `${day}${_ordinal(day)} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+function formatDateTime(iso){
+  // Header "last updated" — local timezone, with 12-hour clock + AM/PM.
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const day = d.getDate();
+  const month = _MONTHS_LONG[d.getMonth()];
+  const year = d.getFullYear();
+  const h24 = d.getHours();
+  const h12 = h24 === 0 ? 12 : (h24 > 12 ? h24 - 12 : h24);
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+  return `${day}${_ordinal(day)} ${month} ${year}, ${h12}:${mins} ${ampm}`;
 }
 
 // ============ LAZY DATA LOADING ============
@@ -1244,7 +1474,7 @@ function renderHeaderMeta(){
   meta.innerHTML = `
     <span><strong>${TOTAL_COUNT.toLocaleString()}</strong> total profiles</span>
     <span class="dot"></span>
-    <span>updated ${escapeHtml(GENERATED_AT)}</span>
+    <span>updated ${escapeHtml(formatDateTime(GENERATED_AT))}</span>
     <span class="dot"></span>
     <span>from <a class="ch-source" href="https://t.me/${encodeURIComponent(ch)}" target="_blank" rel="noopener">@${escapeHtml(ch)}</a></span>
   `;
@@ -1623,6 +1853,7 @@ function resetFilters(opts){
 // ============ FIRST RENDER ============
 (async () => {
   migrateShortlistStorage();
+  migratePrefsStorage();
   renderHeaderMeta();
   renderChannelSwitch();
   updatePrefsBadge();
