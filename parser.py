@@ -100,9 +100,23 @@ def extract_age(text: str) -> Optional[int]:
 
     current_year = datetime.now().year
 
-    # Cutoff at the STRUCTURED "Looking for:" field marker — not at every
-    # narrative use of "looking for" (e.g. "...is looking for 2nd marriage").
-    cutoff = re.search(r"\blooking\s+for\s*[:\-—]", text, re.IGNORECASE)
+    # Cutoff before any PARTNER-preference section so we don't pick up the
+    # partner's preferred age as the poster's own.
+    cutoff = re.search(
+        r"\b(?:"
+        r"looking\s+for\s*[:\-—]"                                 # structured "Looking for:" field
+        r"|preferred\s+age"                                       # "Preferred Age: 22-28"
+        r"|preferred\s+(?:location|spouse|criteria|partner)"
+        r"|potential\s+match"                                     # "POTENTIAL MATCH DETAILS"
+        r"|partner\s+(?:preference|details|expectations|requirements)"
+        r"|spouse\s+(?:preference|expectations|requirements)"
+        r"|expectations\s+from"                                   # "Expectations from future spouse"
+        r"|future\s+spouse"
+        r"|groom\s+(?:expectations|preference|requirements)"      # bride looking for groom
+        r"|bride\s+(?:expectations|preference|requirements)"      # groom looking for bride
+        r")",
+        text, re.IGNORECASE,
+    )
     haystack = text[: cutoff.start()] if cutoff else text
 
     # Separator between label and value: one-or-more of : - — (compound like ":-" allowed)
@@ -309,38 +323,59 @@ def extract_country(text: str) -> Optional[str]:
     return None
 
 
+_FAMILY_CTX_RX = re.compile(
+    r"\b(mother|father|sister|brother|wife|husband|son|daughter|"
+    r"parents?|family|guardian|sibling|in[\s-]?laws?)\b",
+    re.IGNORECASE,
+)
+
+
 def extract_education(text: str) -> Optional[str]:
     """Pulls a one-line education descriptor."""
     patterns = [
-        r"education[:\-]\s*([^\n]+)",
-        r"qualification[:\-]\s*([^\n]+)",
+        r"\beducation(?:\s*details?)?\s*[:\-]+\s*([^\n]+)",
+        r"\bqualification(?:s)?\s*[:\-]+\s*([^\n]+)",
         r"\b(b\.?tech|m\.?tech|mbbs|md|phd|b\.?e\b|m\.?e\b|b\.?sc|m\.?sc|bca|mca|bba|mba|ca|llb|llm|b\.?com|m\.?com|ba|ma|diploma|graduate|post[\s-]?graduate|alim|alima|hafiz|hafiza|hifz)\b",
     ]
     for p in patterns:
         m = re.search(p, text, re.IGNORECASE)
         if m:
-            return m.group(1).strip().rstrip(".,;")[:80]
+            val = m.group(1).strip().rstrip(".,;")[:80]
+            if val:
+                return val
     return None
 
 
 def extract_profession(text: str) -> Optional[str]:
+    """Pulls a one-line profession/occupation. Skips matches that clearly
+    refer to a family member rather than the poster (e.g. mother's job)."""
+    # Structured field patterns — tolerate spaces before the colon
+    # (e.g. "Occupation : ..." with a space, common in some templates).
     patterns = [
-        r"profession[:\-]\s*([^\n]+)",
-        r"occupation[:\-]\s*([^\n]+)",
-        r"work(?:ing)?\s+as[:\-]?\s*([^\n]+)",
-        r"job[:\-]\s*([^\n]+)",
+        r"\bprofession(?:\s*details?)?\s*[:\-]+\s*([^\n]+)",
+        r"\boccupation(?:\s*details?)?\s*[:\-]+\s*([^\n]+)",
+        r"\bwork(?:ing)?\s+as\s*[:\-]+\s*([^\n]+)",
+        r"\bjob\s*(?:title|details)?\s*[:\-]+\s*([^\n]+)",
     ]
     for p in patterns:
         m = re.search(p, text, re.IGNORECASE)
         if m:
-            return m.group(1).strip().rstrip(".,;")[:80]
-    # Common job keywords as last resort
+            val = m.group(1).strip().rstrip(".,;")[:80]
+            if val:
+                return val
+
+    # Keyword fallback — only used when no structured field was found.
+    # Skip matches whose immediate prefix mentions a family member (so we
+    # don't return the mother's "housewife" as the poster's job).
     keywords = ["doctor", "engineer", "teacher", "businessman", "business", "lawyer",
                 "accountant", "developer", "designer", "imam", "scholar", "homemaker",
                 "housewife", "student", "nurse", "pharmacist", "professor", "artist",
                 "freelancer", "self-employed", "entrepreneur"]
     for kw in keywords:
-        if re.search(rf"\b{kw}\b", text, re.IGNORECASE):
+        for m in re.finditer(rf"\b{kw}\b", text, re.IGNORECASE):
+            prefix = text[max(0, m.start() - 40): m.start()]
+            if _FAMILY_CTX_RX.search(prefix):
+                continue
             return kw.title()
     return None
 
