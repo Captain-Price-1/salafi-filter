@@ -51,7 +51,7 @@ jobs:
             echo "Restored session from cache."
           fi
 
-      - name: Scrape Telegram and rebuild HTML
+      - name: Scrape Telegram, re-parse all rows, rebuild HTML
         env:
           TELEGRAM_API_ID:   ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
@@ -59,6 +59,9 @@ jobs:
           CHANNEL:           ${{ secrets.CHANNEL }}
         run: |
           python scrape.py
+          # Re-run the parser over every stored row so parser improvements
+          # automatically back-fill the whole DB (not just newly scraped rows).
+          python reparse.py
           python build_html.py
 
       - name: Deploy to Netlify
