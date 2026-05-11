@@ -196,6 +196,13 @@ nav.tabs{display:flex;gap:2px;margin-top:14px;overflow-x:auto;-webkit-overflow-s
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .tab.disabled{color:var(--muted-soft);cursor:pointer}
 .tab.disabled:hover{color:var(--muted)}
+.tab .badge{
+  display:inline-block;background:#9C3D1A;color:#fff;
+  border-radius:999px;padding:2px 8px;
+  font:700 11px/1.4 'Inter',sans-serif;
+  margin-left:6px;line-height:1.4;vertical-align:middle;
+}
+.tab .badge.zero{display:none}
 .tab .soon{
   display:inline-block;background:var(--gold-soft);color:#8C6B36;
   padding:2px 7px;border-radius:999px;font-size:9.5px;font-weight:700;
@@ -410,9 +417,99 @@ aside .filter-actions{
 .raw-message .raw-text{color:var(--ink-soft)}
 .raw-message .raw-blank{height:6px}
 @media (max-width: 600px){.complete-body{padding:14px 16px}}
-.card .foot{margin-top:14px;font-size:13px}
-.card .foot a{color:var(--accent);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:5px}
-.card .foot a:hover{text-decoration:underline}
+.card .foot{
+  margin-top:14px;font-size:13px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;
+}
+.card .foot a.tg-link{color:var(--accent);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.card .foot a.tg-link:hover{text-decoration:underline}
+.shortlist-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:999px;padding:6px 13px;
+  font:600 12px/1 'Inter',sans-serif;
+  color:var(--muted);cursor:pointer;
+  transition:all var(--t);
+}
+.shortlist-btn:hover{color:#A0466A;border-color:#F0CFD8;background:#FBE9EE}
+.shortlist-btn.on{color:#A0466A;background:#FBE9EE;border-color:#E8B6C5;font-weight:700}
+.shortlist-btn .heart-icon{font-size:13px;line-height:1;transition:transform var(--t)}
+.shortlist-btn.on .heart-icon{transform:scale(1.15);animation:pop 280ms ease-out}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1.15)}}
+
+/* ---------- Preferences tab ---------- */
+.prefs-applied-banner{
+  display:flex;align-items:center;gap:12px;
+  background:var(--accent-soft);color:var(--accent);
+  border:1px solid #C4DECC;border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:20px;
+  animation:cardIn 320ms ease-out backwards;
+}
+.prefs-applied-banner .pab-check{
+  flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;
+}
+.prefs-applied-banner strong{display:block;font-size:14.5px;color:var(--accent);margin-bottom:2px}
+.prefs-applied-banner small{display:block;font-size:12.5px;color:var(--accent);opacity:.8}
+.prefs-summary-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px 28px;
+  max-width:720px;margin:0 auto;
+  box-shadow:var(--shadow-sm);
+  animation:cardIn 320ms ease-out backwards;
+}
+.prefs-summary-card h2{
+  margin:0 0 4px;font:700 24px/1.2 'Playfair Display',Georgia,serif;
+  color:var(--accent);letter-spacing:-.01em;
+}
+.prefs-summary-card .channel-hint{
+  color:var(--muted);font-size:13px;margin-bottom:18px;
+}
+.prefs-list{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;margin:0 0 22px}
+.prefs-list dt{
+  font:600 11px/1.5 'Inter',sans-serif;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+  padding-top:3px;
+}
+.prefs-list dd{margin:0;color:var(--ink);font:400 14px/1.5 'Inter',sans-serif;word-break:break-word}
+.prefs-empty{
+  text-align:center;padding:70px 24px;
+  background:var(--panel);border:1px dashed var(--border);
+  border-radius:var(--radius);max-width:560px;margin:0 auto;
+}
+.prefs-empty .pe-icon{font-size:42px;color:var(--accent);opacity:.7;margin-bottom:16px;animation:floaty 3.5s ease-in-out infinite}
+.prefs-empty h2{
+  margin:0 0 10px;font:700 22px/1.2 'Playfair Display',Georgia,serif;color:var(--accent);
+}
+.prefs-empty p{color:var(--ink-soft);font-size:14px;line-height:1.6;margin:0 0 22px}
+.tab .badge#prefsBadge{background:var(--accent);font-size:8px;padding:3px 5px;line-height:1}
+
+/* ---------- Shortlist tab ---------- */
+.shortlist-header{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  flex-wrap:wrap;gap:12px;margin-bottom:18px;
+}
+.shortlist-header h2{
+  margin:0;font:700 24px/1.2 'Playfair Display',Georgia,serif;
+  color:var(--accent);letter-spacing:-.01em;
+}
+.shortlist-header h2 small{
+  display:inline-block;font:500 13px/1.3 'Inter',sans-serif;
+  color:var(--muted);margin-left:10px;letter-spacing:0;
+}
+.shortlist-empty{
+  text-align:center;padding:70px 24px;
+  background:var(--panel);border:1px dashed var(--border);
+  border-radius:var(--radius);
+}
+.shortlist-empty .se-icon{font-size:42px;color:#A0466A;opacity:.7;margin-bottom:16px}
+.shortlist-empty h3{
+  margin:0 0 10px;font:700 22px/1.2 'Playfair Display',Georgia,serif;color:var(--accent);
+}
+.shortlist-empty p{color:var(--ink-soft);font-size:14px;line-height:1.6;margin:0}
 
 /* ---------- Pagination & empty ---------- */
 .pagination{
@@ -605,7 +702,8 @@ aside .filter-actions{
   <div class="channel-switch" id="channelSwitch"></div>
   <nav class="tabs">
     <button class="tab active" data-tab="browse">Browse</button>
-    <button class="tab disabled" data-tab="prefs">My Preferences <span class="soon">Soon</span></button>
+    <button class="tab" data-tab="prefs">My Preferences <span class="badge zero" id="prefsBadge">●</span></button>
+    <button class="tab" data-tab="shortlist">Shortlist <span class="badge zero" id="shortlistBadge">0</span></button>
     <button class="tab disabled" data-tab="notif">Notifications <span class="soon">Soon</span></button>
   </nav>
 </header>
@@ -666,6 +764,7 @@ aside .filter-actions{
       <input type="text" id="education" placeholder="e.g. mbbs">
 
       <div class="filter-actions">
+        <button class="btn primary" id="savePrefsBtn" onclick="savePrefs()">★ Save as my preferences</button>
         <button class="btn" onclick="resetFilters()">Reset filters</button>
       </div>
     </aside>
@@ -685,14 +784,14 @@ aside .filter-actions{
   </div>
 </section>
 
-<!-- ============ COMING SOON: PREFERENCES ============ -->
+<!-- ============ MY PREFERENCES TAB ============ -->
 <section class="tab-section" id="prefs-section">
-  <div class="coming-soon">
-    <div class="cs-icon">💍</div>
-    <h2>My Preferences</h2>
-    <p>Save your criteria once. Get a personalized feed across both channels, with smart match scoring and re-runs whenever new profiles arrive.</p>
-    <span class="cs-badge">Coming Soon</span>
-  </div>
+  <div id="prefsContent"></div>
+</section>
+
+<!-- ============ SHORTLIST TAB ============ -->
+<section class="tab-section" id="shortlist-section">
+  <div id="shortlistContent"></div>
 </section>
 
 <!-- ============ COMING SOON: NOTIFICATIONS ============ -->
@@ -728,6 +827,185 @@ let activePreset = null;
 
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function activeData(){ return dataCache[activeChannel] || []; }
+function activeCount(){ return activeData().length; }
+function channelLabel(id){
+  const c = CHANNELS.find(x => x.id === id);
+  return c ? c.label : '@' + id;
+}
+
+// ============ PREFERENCES (per channel) ============
+function prefsKey(){ return `salafi_prefs_${activeChannel}_v1`; }
+function loadSavedPrefs(){
+  try { return JSON.parse(localStorage.getItem(prefsKey())) || null; } catch(e){ return null; }
+}
+function hasSavedPrefs(){ return loadSavedPrefs() != null; }
+function prefsAreMeaningful(p){
+  if (!p) return false;
+  if (p.keyword) return true;
+  if (p.gender) return true;
+  if ((p.ageMin && p.ageMin > 18) || (p.ageMax && p.ageMax < 60)) return true;
+  if (p.dateFrom || p.dateTo) return true;
+  if ((p.countries||[]).length) return true;
+  if ((p.states||[]).length) return true;
+  if ((p.cityTerms||[]).length) return true;
+  if (p.profession) return true;
+  if (p.education) return true;
+  if ((p.marital||[]).length) return true;
+  return false;
+}
+function savePrefs(){
+  const c = browseFilters();
+  if (!prefsAreMeaningful(c)){
+    alert('No filters set. Set at least one filter on the Browse tab, then save.');
+    return;
+  }
+  localStorage.setItem(prefsKey(), JSON.stringify(c));
+  const btn = document.getElementById('savePrefsBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Saved as preferences';
+  setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  updatePrefsBadge();
+}
+function clearSavedPrefs(){
+  localStorage.removeItem(prefsKey());
+  resetFilters();
+  renderPrefsTab();
+  updatePrefsBadge();
+}
+function applySavedPrefs(){
+  const p = loadSavedPrefs();
+  if (!p) return false;
+  document.getElementById('q').value          = p.keyword || '';
+  document.getElementById('gender').value     = p.gender || '';
+  document.getElementById('ageMin').value     = (p.ageMin && p.ageMin > 0) ? p.ageMin : '';
+  document.getElementById('ageMax').value     = (p.ageMax && p.ageMax < 999) ? p.ageMax : '';
+  document.getElementById('dateFrom').value   = p.dateFrom || '';
+  document.getElementById('dateTo').value     = p.dateTo || '';
+  document.getElementById('city').value       = (p.cityTerms||[]).join(', ');
+  document.getElementById('profession').value = p.profession || '';
+  document.getElementById('education').value  = p.education || '';
+  [...document.querySelectorAll('#country option')].forEach(o => {
+    o.selected = (p.countries||[]).includes(o.value);
+  });
+  [...document.querySelectorAll('#state option')].forEach(o => {
+    o.selected = (p.states||[]).includes(o.value);
+  });
+  document.querySelectorAll('[data-marital]').forEach(cb => {
+    cb.checked = (p.marital||[]).includes(cb.value);
+  });
+  return true;
+}
+function updatePrefsBadge(){
+  const b = document.getElementById('prefsBadge');
+  if (!b) return;
+  b.classList.toggle('zero', !hasSavedPrefs());
+}
+function summarizePrefs(p){
+  const rows = [];
+  if (p.gender)                       rows.push(['Gender',  p.gender]);
+  if ((p.ageMin && p.ageMin > 18) || (p.ageMax && p.ageMax < 60))
+    rows.push(['Age',     `${p.ageMin || 18} – ${p.ageMax || 60}`]);
+  if (p.dateFrom || p.dateTo)         rows.push(['Posted',  `${p.dateFrom || '…'}  →  ${p.dateTo || '…'}`]);
+  if ((p.countries||[]).length)       rows.push(['Country', p.countries.join(', ')]);
+  if ((p.states||[]).length)          rows.push(['State',   p.states.join(', ')]);
+  if ((p.cityTerms||[]).length)       rows.push(['City',    p.cityTerms.join(', ')]);
+  if ((p.marital||[]).length)         rows.push(['Marital', p.marital.join(', ')]);
+  if (p.profession)                   rows.push(['Profession', p.profession]);
+  if (p.education)                    rows.push(['Education',  p.education]);
+  if (p.keyword)                      rows.push(['Keyword', p.keyword]);
+  return `<dl class="prefs-list">${rows.map(([k,v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>`;
+}
+function renderPrefsTab(){
+  const host = document.getElementById('prefsContent');
+  if (!host) return;
+  const p = loadSavedPrefs();
+  if (!p || !prefsAreMeaningful(p)){
+    host.innerHTML = `
+      <div class="prefs-empty">
+        <div class="pe-icon">💍</div>
+        <h2>No preferences saved yet</h2>
+        <p>Set up your filter criteria once and we'll apply them automatically every time you visit. Each channel has its own preferences.</p>
+        <button class="btn primary" onclick="switchTab('browse')">Set filters in Browse →</button>
+      </div>`;
+    return;
+  }
+  host.innerHTML = `
+    <div class="prefs-applied-banner">
+      <div class="pab-check">✓</div>
+      <div>
+        <strong>Your preferences are applied.</strong>
+        <small>Browse is automatically filtered using these criteria on every visit to ${escapeHtml(channelLabel(activeChannel))}.</small>
+      </div>
+    </div>
+    <div class="prefs-summary-card">
+      <h2>My Preferences</h2>
+      <div class="channel-hint">Saved for <strong>${escapeHtml(channelLabel(activeChannel))}</strong> · ${activeCount().toLocaleString()} profiles in this channel</div>
+      ${summarizePrefs(p)}
+      <div class="actions">
+        <button class="btn primary" onclick="switchTab('browse')">Edit in Browse →</button>
+        <button class="btn" onclick="if(confirm('Clear saved preferences for this channel?'))clearSavedPrefs()">Clear preferences</button>
+      </div>
+    </div>`;
+}
+
+// ============ SHORTLIST (per channel) ============
+function shortlistKey(){ return `salafi_shortlist_${activeChannel}_v1`; }
+function loadShortlist(){
+  try { return JSON.parse(localStorage.getItem(shortlistKey())) || []; } catch(e){ return []; }
+}
+function saveShortlist(arr){ localStorage.setItem(shortlistKey(), JSON.stringify(arr)); }
+function isShortlisted(msg_id){ return loadShortlist().indexOf(msg_id) >= 0; }
+function toggleShortlist(msg_id){
+  const list = loadShortlist();
+  const idx = list.indexOf(msg_id);
+  const wasOn = idx >= 0;
+  if (wasOn) list.splice(idx, 1);
+  else list.push(msg_id);
+  saveShortlist(list);
+  // Update any visible heart buttons for this msg_id (Browse + Shortlist tabs)
+  document.querySelectorAll(`.shortlist-btn[data-msg-id="${msg_id}"]`).forEach(btn => {
+    btn.classList.toggle('on', !wasOn);
+    btn.querySelector('.heart-icon').textContent = wasOn ? '♡' : '♥';
+    btn.querySelector('span:last-child').textContent = wasOn ? 'Shortlist' : 'Shortlisted';
+  });
+  // If Shortlist tab is active and we just removed one, re-render
+  if (document.getElementById('shortlist-section').classList.contains('active')){
+    renderShortlist();
+  }
+  updateShortlistBadge();
+}
+function updateShortlistBadge(){
+  const n = loadShortlist().length;
+  const b = document.getElementById('shortlistBadge');
+  if (!b) return;
+  b.textContent = n;
+  b.classList.toggle('zero', n === 0);
+}
+function renderShortlist(){
+  const host = document.getElementById('shortlistContent');
+  if (!host) return;
+  const data = activeData();
+  const list = loadShortlist();
+  const profiles = data.filter(p => list.includes(p.msg_id));
+
+  let header = `<div class="shortlist-header">
+    <h2>Shortlist <small>${escapeHtml(channelLabel(activeChannel))} · ${profiles.length} of ${list.length} saved</small></h2>
+  </div>`;
+
+  if (!data.length){
+    host.innerHTML = header + `<div class="loading-overlay"><div class="spinner-mark">${logoSpinnerSVG()}</div><div class="loading-text">Loading profiles…</div></div>`;
+    return;
+  }
+  if (!list.length){
+    host.innerHTML = header + `<div class="shortlist-empty">
+      <div class="se-icon">♡</div>
+      <h3>No profiles shortlisted yet</h3>
+      <p>Tap the ♡ button on any profile to save it here.<br>Shortlisted profiles stay visible in Browse too — this tab just keeps the ones you've marked.</p>
+    </div>`;
+    return;
+  }
+  host.innerHTML = header + profiles.map(p => renderCard(p)).join('');
+}
 
 const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function formatDate(iso){
@@ -849,6 +1127,11 @@ async function switchChannel(id){
   renderChannelSwitch();
   await ensureChannelData(id);
   rebuildDynamicLists();
+  // Auto-apply saved preferences for the new channel (if any). Falls back to
+  // the India default already set by rebuildDynamicLists when no prefs exist.
+  applySavedPrefs();
+  updatePrefsBadge();
+  updateShortlistBadge();
   renderBrowse();
 }
 
@@ -860,6 +1143,8 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===name));
   document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id===name+'-section'));
   closeDrawer();
+  if (name === 'prefs')     renderPrefsTab();
+  if (name === 'shortlist') renderShortlist();
 }
 
 // ============ MOBILE DRAWER ============
@@ -1106,9 +1391,18 @@ function renderCard(p){
       <div class="complete-body">${formatRawProfile(p.raw_text)}</div>
     </details>
     <div class="foot">
-      <a href="${p.telegram_url}" target="_blank" rel="noopener">Open in Telegram ↗</a>
+      <a class="tg-link" href="${p.telegram_url}" target="_blank" rel="noopener">Open in Telegram ↗</a>
+      ${shortlistBtnHtml(p.msg_id)}
     </div>
   </div>`;
+}
+
+function shortlistBtnHtml(msg_id){
+  const on = isShortlisted(msg_id);
+  return `<button class="shortlist-btn${on?' on':''}" data-msg-id="${msg_id}" onclick="toggleShortlist(${msg_id})" aria-label="${on?'Remove from':'Add to'} shortlist">
+    <span class="heart-icon">${on?'♥':'♡'}</span>
+    <span>${on?'Shortlisted':'Shortlist'}</span>
+  </button>`;
 }
 
 // ============ BROWSE RENDER ============
@@ -1179,10 +1473,13 @@ function resetFilters(opts){
 (async () => {
   renderHeaderMeta();
   renderChannelSwitch();
+  updatePrefsBadge();
+  updateShortlistBadge();
   showLoading(activeChannel);
   try {
     await ensureChannelData(activeChannel);
     rebuildDynamicLists();
+    applySavedPrefs();   // overlay user's saved preferences (if any)
     renderBrowse();
   } catch (err) {
     document.getElementById('results').innerHTML = `<div class="empty"><span class="icon">⚠</span>Couldn't load profiles. ${escapeHtml(String(err.message||err))}<br><br><button class="btn" onclick="location.reload()">Retry</button></div>`;
