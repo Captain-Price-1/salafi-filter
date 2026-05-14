@@ -5,6 +5,12 @@ on:
     - cron: '0 */4 * * *'   # every 4 hours, on the hour (UTC)
   workflow_dispatch:         # also allow manual trigger from the Actions tab
 
+# GitHub Pages deploy needs these permissions on the workflow's GITHUB_TOKEN.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
   group: scrape
   cancel-in-progress: false  # never cancel a running scrape; queue if a new one starts
@@ -13,6 +19,9 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -64,21 +73,14 @@ jobs:
           python reparse.py
           python build_html.py
 
-      - name: Set up Node (for Netlify CLI)
-        uses: actions/setup-node@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact (./public)
+        uses: actions/upload-pages-artifact@v3
         with:
-          node-version: '20'
+          path: ./public
 
-      - name: Install Netlify CLI
-        run: npm install -g netlify-cli@latest
-
-      - name: Deploy to Netlify
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
-        run: |
-          netlify deploy \
-            --prod \
-            --dir=./public \
-            --site="$NETLIFY_SITE_ID" \
-            --message="scheduled scrape ${{ github.run_id }}"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
