@@ -64,15 +64,21 @@ jobs:
           python reparse.py
           python build_html.py
 
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3.0
+      - name: Set up Node (for Netlify CLI)
+        uses: actions/setup-node@v4
         with:
-          publish-dir: ./public
-          production-branch: main
-          production-deploy: true
-          deploy-message: "scheduled scrape ${{ github.run_id }}"
-          enable-pull-request-comment: false
-          enable-commit-comment: false
+          node-version: '20'
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Deploy to Netlify
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          netlify deploy \
+            --prod \
+            --dir=./public \
+            --site="$NETLIFY_SITE_ID" \
+            --message="scheduled scrape ${{ github.run_id }}"
