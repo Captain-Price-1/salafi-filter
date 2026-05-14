@@ -209,6 +209,38 @@ def extract_age(text: str) -> Optional[int]:
                 if 18 <= age <= 70:
                     return age
 
+    # ---- FALLBACK 1: any date-like pattern with a plausible birth year ----
+    # No keyword requirement. Profiles rarely contain unrelated dates;
+    # if there is one, it's almost always the poster's DOB.
+    fallback_date_patterns = [
+        rf"\b\d{{1,2}}[/\-.]\d{{1,2}}[/\-.]({year_rx})\b",                                  # 12/05/1998
+        rf"\b({year_rx})[/\-.]\d{{1,2}}[/\-.]\d{{1,2}}\b",                                   # 1998-05-12
+        rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s*(?:{months_rx})[a-z]*\s*({year_rx})\b",              # 12 Aug 1998
+        rf"\b(?:{months_rx})[a-z]*\s+\d{{1,2}}(?:st|nd|rd|th)?,?\s+({year_rx})\b",            # August 12, 1998
+        rf"\b\d{{1,2}}[/\-.]\d{{1,2}}[/\-.](\d{{2}})\b(?!\d)",                                # 12/05/98 (2-digit year)
+    ]
+    for p in fallback_date_patterns:
+        m = re.search(p, haystack, re.IGNORECASE)
+        if not m:
+            continue
+        yr = int(m.group(1))
+        # Resolve 2-digit years (≥30 → 19YY, else 20YY).
+        if yr < 100:
+            yr = 1900 + yr if yr >= 30 else 2000 + yr
+        age = current_year - yr
+        if 18 <= age <= 70:
+            return age
+
+    # ---- FALLBACK 2: just a plausible 4-digit year anywhere in the haystack ----
+    # Last-ditch attempt — works when someone wrote only the birth year (e.g.
+    # "1998" with no surrounding label). The year_rx range already restricts
+    # to 1930-2019, and the 18-70 age gate filters anything implausible.
+    m = re.search(rf"\b{year_rx}\b", haystack)
+    if m:
+        age = current_year - int(m.group(1))
+        if 18 <= age <= 70:
+            return age
+
     return None
 
 
