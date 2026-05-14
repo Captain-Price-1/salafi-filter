@@ -1803,15 +1803,13 @@ function renderCard(p){
   if (complexion)   facts.push(`<span class="fact"><span class="fact-icon">✨</span><span class="fact-key">Complexion</span> ${escapeHtml(complexion)}</span>`);
   if (p.profession) facts.push(`<span class="fact"><span class="fact-icon">💼</span><span class="fact-key">Profession</span> ${escapeHtml(p.profession)}</span>`);
 
-  const lookingFor = p.looking_for
-    ? `<div class="lookingfor"><span class="lookingfor-label">Looking for</span>${escapeHtml(p.looking_for)}</div>`
-    : '';
+  // Note: the "Looking for" callout was removed from the card summary on
+  // purpose — the full text is still available inside "Complete details".
 
   return `<div class="card">
     ${headerRow}
     <div class="head-line">${genderBadge}${ageEl}${locEl}</div>
     ${facts.length?`<div class="fact-row">${facts.join('')}</div>`:''}
-    ${lookingFor}
     <details class="complete">
       <summary><span class="caret">›</span>Complete details</summary>
       <div class="complete-body">${formatRawProfile(p.raw_text)}</div>
